@@ -5,9 +5,11 @@ from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
+import qrcode
 import secrets
 import string
 from typing import Any
+from urllib.parse import urlencode
 from uuid import uuid4
 
 
@@ -150,10 +152,14 @@ def normalize_pairing_code(code: str) -> str:
 
 
 def format_pairing_instructions(session: PairingSession) -> str:
+    deep_link = _pairing_deep_link(session)
     return "\n".join(
         [
             f"Pairing code: {session.code}",
             f"Expires at: {session.expires_at}",
+            "QR code:",
+            _pairing_qr_code(deep_link),
+            f"Deep link: {deep_link}",
             "Payload JSON:",
             json.dumps(session.payload, ensure_ascii=False, sort_keys=True),
         ]
@@ -172,6 +178,25 @@ def _new_state() -> dict[str, Any]:
 def _new_pairing_code() -> str:
     raw = "".join(secrets.choice(PAIRING_CODE_ALPHABET) for _ in range(8))
     return f"{raw[:4]}-{raw[4:]}"
+
+
+def _pairing_deep_link(session: PairingSession) -> str:
+    query = urlencode(
+        {
+            "serverUrl": str(session.payload["serverUrl"]),
+            "code": session.code,
+            "macDeviceId": str(session.payload["macDeviceId"]),
+            "expiresAt": session.expires_at,
+        }
+    )
+    return f"line://pair?{query}"
+
+
+def _pairing_qr_code(value: str) -> str:
+    qr = qrcode.QRCode(border=1)
+    qr.add_data(value)
+    qr.make(fit=True)
+    return "\n".join("".join("██" if cell else "  " for cell in row) for row in qr.get_matrix())
 
 
 def _hash_secret(kind: str, secret: str) -> str:

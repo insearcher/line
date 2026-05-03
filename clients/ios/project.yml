@@ -30,7 +30,12 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         NSMicrophoneUsageDescription: line uses the microphone to send your spoken commands to your local voice worker.
+        NSCameraUsageDescription: line scans gateway invitation QR codes to pair with your local gateway.
         NSLocalNetworkUsageDescription: line connects to the local demo server running on your Mac.
+        CFBundleURLTypes:
+          - CFBundleURLName: line gateway invitation
+            CFBundleURLSchemes:
+              - line
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         UIBackgroundModes:

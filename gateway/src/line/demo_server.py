@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import json
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import secrets
 from urllib.parse import parse_qs, urlparse
 
 from line.agent_runs import AgentRunStore
@@ -28,6 +29,7 @@ class DemoServerConfig:
     agent_runs_path: Path = Path("data/agent_runs.jsonl")
     control_path: Path = Path("data/control.jsonl")
     pairing_state_path: Path = Path("data/pairing_state.json")
+    dashboard_token: str | None = None
     env_path: Path = Path(".env")
 
 
@@ -39,8 +41,7 @@ def create_demo_http_server(config: DemoServerConfig) -> ThreadingHTTPServer:
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
             if parsed.path == "/api/token":
-                if not self._is_authorized():
-                    self._send_json({"ok": False, "error": "unauthorized"}, status=401)
+                if not self._require_authorized():
                     return
                 query = parse_qs(parsed.query)
                 room = query.get("room", [config.room])[0]
@@ -56,6 +57,8 @@ def create_demo_http_server(config: DemoServerConfig) -> ThreadingHTTPServer:
                 self._send_json(_token_payload(config, room=room, identity=identity))
                 return
             if parsed.path == "/api/events":
+                if not self._require_authorized():
+                    return
                 query = parse_qs(parsed.query)
                 after = query.get("after", [None])[0]
                 event_log = EventLog(config.events_path)
@@ -63,15 +66,21 @@ def create_demo_http_server(config: DemoServerConfig) -> ThreadingHTTPServer:
                 self._send_json({"events": [asdict(event) for event in events]})
                 return
             if parsed.path == "/api/tasks":
+                if not self._require_authorized():
+                    return
                 tasks = TaskQueue(config.queue_path).list_tasks()
                 self._send_json({"tasks": [asdict(task) for task in tasks]})
                 return
             if parsed.path == "/api/usage":
+                if not self._require_authorized():
+                    return
                 query = parse_qs(parsed.query)
                 month = query.get("month", [""])[0]
                 self._send_json({"summary": UsageLog(config.usage_path).monthly_summary(month)})
                 return
             if parsed.path == "/api/agent-runs":
+                if not self._require_authorized():
+                    return
                 runs = AgentRunStore(config.agent_runs_path).list_runs_newest_first()
                 self._send_json({"agent_runs": [asdict(run) for run in runs]})
                 return
@@ -101,8 +110,7 @@ def create_demo_http_server(config: DemoServerConfig) -> ThreadingHTTPServer:
                 )
                 return
             if parsed.path == "/api/reset":
-                if not self._is_authorized():
-                    self._send_json({"ok": False, "error": "unauthorized"}, status=401)
+                if not self._require_authorized():
                     return
                 reset_demo_state(
                     events_path=config.events_path,
@@ -131,12 +139,23 @@ def create_demo_http_server(config: DemoServerConfig) -> ThreadingHTTPServer:
             return json.loads(self.rfile.read(length).decode("utf-8"))
 
         def _is_authorized(self) -> bool:
+            token = self._request_token()
+            if _is_dashboard_token(token, config.dashboard_token):
+                return True
+            return PairingStore(config.pairing_state_path).authenticate(token)
+
+        def _request_token(self) -> str | None:
             authorization = self.headers.get("Authorization", "")
             prefix = "Bearer "
             if authorization.startswith(prefix):
-                return PairingStore(config.pairing_state_path).authenticate(authorization[len(prefix) :])
-            header_token = self.headers.get("X-Line-Token")
-            return PairingStore(config.pairing_state_path).authenticate(header_token)
+                return authorization[len(prefix) :]
+            return self.headers.get("X-Line-Token")
+
+        def _require_authorized(self) -> bool:
+            if self._is_authorized():
+                return True
+            self._send_json({"ok": False, "error": "unauthorized"}, status=401)
+            return False
 
         def _send_json(self, payload: dict, *, status: int = 200) -> None:
             body = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -156,10 +175,29 @@ def reset_demo_state(*, events_path: Path, queue_path: Path, usage_path: Path, a
 
 
 def run_demo_server(config: DemoServerConfig) -> None:
-    server = create_demo_http_server(config)
-    url = f"http://{config.host}:{server.server_port}"
+    resolved_config = _with_dashboard_token(config)
+    server = create_demo_http_server(resolved_config)
+    url = f"http://{resolved_config.host}:{server.server_port}"
     print(f"line demo listening on {url}", flush=True)
+    print(f"dashboard token: {resolved_config.dashboard_token}", flush=True)
+    print(f"dashboard URL: {url}/#dashboardToken={resolved_config.dashboard_token}", flush=True)
     server.serve_forever()
+
+
+def generate_dashboard_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def _with_dashboard_token(config: DemoServerConfig) -> DemoServerConfig:
+    if config.dashboard_token:
+        return config
+    return replace(config, dashboard_token=generate_dashboard_token())
+
+
+def _is_dashboard_token(token: str | None, dashboard_token: str | None) -> bool:
+    if not token or not dashboard_token:
+        return False
+    return secrets.compare_digest(token, dashboard_token)
 
 
 def _token_payload(config: DemoServerConfig, *, room: str | None = None, identity: str | None = None) -> dict[str, str]:

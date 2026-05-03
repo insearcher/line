@@ -50,6 +50,41 @@ final class VoiceClientViewModel: ObservableObject {
         return String(macDeviceId.prefix(8))
     }
 
+    func pairFromInvitationURL(_ url: URL) async {
+        do {
+            let invitation = try GatewayInvitation(url: url)
+            await pair(with: invitation)
+        } catch {
+            status = "Pair failed"
+            appendLog("Pair failed: \(describe(error))")
+        }
+    }
+
+    func pairFromInvitationString(_ value: String) async {
+        guard let url = URL(string: value.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            status = "Pair failed"
+            appendLog("Pair failed: invalid gateway invitation")
+            return
+        }
+        await pairFromInvitationURL(url)
+    }
+
+    func pair(with invitation: GatewayInvitation) async {
+        demoServerURL = invitation.serverURL.absoluteString
+        pairingCode = invitation.code
+        if let macDeviceId = invitation.macDeviceId {
+            appendLog("Gateway invitation for Mac \(macDeviceId.prefix(8))")
+        } else {
+            appendLog("Gateway invitation received")
+        }
+        await pairDevice()
+    }
+
+    func appendScannerError(_ message: String) {
+        status = "Pair failed"
+        appendLog("Pair failed: \(message)")
+    }
+
     func pairDevice() async {
         guard let serverURL = URL(string: demoServerURL) else {
             appendLog("Pair failed: invalid demo server URL")
@@ -139,6 +174,9 @@ final class VoiceClientViewModel: ObservableObject {
             status = "Connected to \(token.room)"
             appendLog("Connected as \(token.identity); microphone is VAD-gated")
         } catch {
+            if handleUnauthorized(error) {
+                return
+            }
             appendLog("Connect failed: \(describe(error))")
             await disconnect()
         }
@@ -174,6 +212,9 @@ final class VoiceClientViewModel: ObservableObject {
             status = isConnected ? "Connected" : "Disconnected"
             appendLog("Reset sent")
         } catch {
+            if handleUnauthorized(error) {
+                return
+            }
             status = isConnected ? "Connected" : "Disconnected"
             appendLog("Reset failed: \(describe(error))")
         }
@@ -219,6 +260,18 @@ final class VoiceClientViewModel: ObservableObject {
             return localized
         }
         return "\(localized) [\(reflected)]"
+    }
+
+    private func handleUnauthorized(_ error: Error) -> Bool {
+        guard case TokenClientError.serverError(_, let statusCode) = error, statusCode == 401 else {
+            return false
+        }
+        VoiceCredentialStore.clear()
+        isPaired = false
+        isConnected = false
+        status = "Pair required"
+        appendLog("Pairing expired or revoked; pair again")
+        return true
     }
 
     private func appendLog(_ message: String) {

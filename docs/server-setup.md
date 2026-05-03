@@ -46,8 +46,8 @@ uv run line doctor --agent-backend codex-app-server --agent-cwd /path/to/workspa
 ## 3. Start the local gateway
 
 The demo server command currently starts the local gateway HTTP API. It provides
-LiveKit tokens, pairing, reset controls, event logs, and serves the static web
-client from `clients/web`.
+LiveKit tokens, pairing, reset controls, event logs, and serves the development
+dashboard from `clients/web`.
 
 For a physical iPhone, bind to all interfaces on a trusted LAN or private VPN:
 
@@ -60,6 +60,10 @@ For simulator-only testing, `127.0.0.1` is enough:
 ```bash
 uv run line demo-server --room line-dev --identity mac-test
 ```
+
+The server prints a development dashboard token and a local dashboard URL with
+that token in the fragment. The dashboard is a dev-only tool; JSON APIs require
+either this dashboard token or a paired iOS device token.
 
 ## 4. Start the voice worker
 
@@ -86,14 +90,18 @@ The worker:
 
 ## 5. Pair the phone
 
-With the server running, create a one-time pairing code:
+With the server running, create a one-time gateway invitation:
 
 ```bash
 uv run line pair --server-url http://YOUR-MAC-LAN-IP:8787
 ```
 
-Enter the code in the iOS app. The app stores the returned phone token in the
-Keychain and uses it for `/api/token` and `/api/reset`.
+Scan the printed QR code in the iOS app, or open the printed `line://pair` deep
+link on the phone. The app stores the returned phone token in Keychain and uses
+it for privileged gateway APIs such as `/api/token` and `/api/reset`.
+
+Manual URL and pairing-code entry remain available in the app's Advanced section
+for development and simulator workflows.
 
 ## Manual text check
 
@@ -118,8 +126,8 @@ line writes local runtime state under ignored paths inside `gateway/`:
 - `gateway/data/pairing_state.json`
 - `gateway/logs/`
 
-These files may contain transcripts, local URLs, and operational details. Do not
-commit them.
+These files may contain transcripts, local URLs, pairing state, and operational
+details. Do not commit them.
 
 ## Troubleshooting
 

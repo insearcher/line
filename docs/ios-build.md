@@ -53,16 +53,20 @@ cd gateway
 uv run line demo-server --host 0.0.0.0 --room line-dev --identity mac-test
 ```
 
-From the repository root, create a pairing code:
+From the repository root, create a gateway invitation:
 
 ```bash
 cd gateway
 uv run line pair --server-url http://YOUR-MAC-LAN-IP:8787
 ```
 
-In the app, enter the pairing code and connect. The app stores the phone token in
-the Keychain. Use the key-slash button in the app to forget the token and pair
-again.
+In the app, use Scan Gateway Invitation and scan the printed QR code. You can
+also open the printed `line://pair` deep link on the phone. The app stores the
+phone token in the Keychain. Use the key-slash button in the app to forget the
+token and pair again.
+
+Manual server URL and pairing-code entry are still available in Advanced for
+debugging and simulator workflows.
 
 ## Simulator
 

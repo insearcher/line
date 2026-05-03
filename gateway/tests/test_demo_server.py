@@ -20,6 +20,7 @@ TEST_STT_KEY = "test-stt-value"
 TEST_TTS_KEY = "test-tts-value"
 TEST_TTS_VOICE = "test-tts-voice"
 TEST_TTS_MODEL = "test-tts-model"
+TEST_DASHBOARD_TOKEN = "test-dashboard-token"
 
 
 def test_demo_server_json_endpoints(tmp_path, monkeypatch) -> None:
@@ -80,7 +81,7 @@ def test_demo_server_json_endpoints(tmp_path, monkeypatch) -> None:
         assert ios_token_payload["identity"] == "iphone-vad"
         assert ios_token_payload["token"]
 
-        events_payload = _get_json(f"{base_url}/api/events")
+        events_payload = _get_json(f"{base_url}/api/events", headers=auth_header)
         assert events_payload["events"][0]["id"] == event.id
         assert events_payload["events"][0]["payload"] == {"text": "hello"}
         assert events_payload["events"][1]["type"] == "demo.token_requested"
@@ -88,13 +89,13 @@ def test_demo_server_json_endpoints(tmp_path, monkeypatch) -> None:
         assert events_payload["events"][2]["type"] == "demo.token_requested"
         assert events_payload["events"][2]["payload"]["identity"] == "iphone-vad"
 
-        tasks_payload = _get_json(f"{base_url}/api/tasks")
+        tasks_payload = _get_json(f"{base_url}/api/tasks", headers=auth_header)
         assert tasks_payload["tasks"][0]["task_text"] == "check the queue"
 
-        usage_payload = _get_json(f"{base_url}/api/usage?month=2026-05")
+        usage_payload = _get_json(f"{base_url}/api/usage?month=2026-05", headers=auth_header)
         assert usage_payload["summary"]["stt.audio"]["seconds"] == 3.5
 
-        agent_runs_payload = _get_json(f"{base_url}/api/agent-runs")
+        agent_runs_payload = _get_json(f"{base_url}/api/agent-runs", headers=auth_header)
         assert agent_runs_payload["agent_runs"][0]["id"] == run.id
         assert agent_runs_payload["agent_runs"][0]["prompt"] == "check tests"
     finally:
@@ -206,7 +207,7 @@ def test_demo_server_reset_endpoint_removes_runtime_logs(tmp_path, monkeypatch) 
         thread.join(timeout=5)
 
 
-def test_demo_server_rejects_unpaired_token_and_reset_requests(tmp_path, monkeypatch) -> None:
+def test_demo_server_rejects_unauthenticated_sensitive_json_requests(tmp_path, monkeypatch) -> None:
     _set_voice_env(monkeypatch)
 
     web_dir = tmp_path / "web"
@@ -231,23 +232,80 @@ def test_demo_server_rejects_unpaired_token_and_reset_requests(tmp_path, monkeyp
     try:
         base_url = f"http://127.0.0.1:{server.server_port}"
 
-        try:
-            _get_json(f"{base_url}/api/token")
-        except HTTPError as error:
-            assert error.code == 401
-        else:
-            raise AssertionError("Expected /api/token to require pairing auth")
+        for path in ("/api/token", "/api/events", "/api/tasks", "/api/usage", "/api/agent-runs"):
+            _assert_http_error(f"{base_url}{path}", expected_status=401)
 
-        try:
-            _post_json(f"{base_url}/api/reset")
-        except HTTPError as error:
-            assert error.code == 401
-        else:
-            raise AssertionError("Expected /api/reset to require pairing auth")
+        _assert_http_error(f"{base_url}/api/reset", method="POST", expected_status=401)
 
         auth_header = _pair_phone(base_url, tmp_path / "pairing.json")
         token_payload = _get_json(f"{base_url}/api/token", headers=auth_header)
         assert token_payload["token"]
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_demo_server_accepts_dashboard_token_for_dev_json_apis(tmp_path, monkeypatch) -> None:
+    _set_voice_env(monkeypatch)
+
+    web_dir = tmp_path / "web"
+    web_dir.mkdir()
+    (web_dir / "index.html").write_text("<html>dashboard</html>", encoding="utf-8")
+    events_path = tmp_path / "events.jsonl"
+    queue_path = tmp_path / "tasks.jsonl"
+    usage_path = tmp_path / "usage.jsonl"
+    agent_runs_path = tmp_path / "agent_runs.jsonl"
+    control_path = tmp_path / "control.jsonl"
+    EventLog(events_path).append("transcript.final", {"text": "hello"})
+    TaskQueue(queue_path).add_task(task_text="check the queue", source_text="Ask Codex to check the queue")
+    UsageLog(usage_path).record_seconds("stt.audio", 1.5, created_at="2026-05-02T10:00:00+00:00")
+    AgentRunStore(agent_runs_path).create_queued(
+        backend="haiku",
+        model="haiku",
+        prompt="check tests",
+        created_at="2026-05-02T10:00:01+00:00",
+    )
+
+    server = create_demo_http_server(
+        DemoServerConfig(
+            host="127.0.0.1",
+            port=0,
+            room="line",
+            identity="mac-test",
+            web_dir=web_dir,
+            events_path=events_path,
+            queue_path=queue_path,
+            usage_path=usage_path,
+            agent_runs_path=agent_runs_path,
+            control_path=control_path,
+            pairing_state_path=tmp_path / "pairing.json",
+            dashboard_token=TEST_DASHBOARD_TOKEN,
+        )
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{server.server_port}"
+        headers = {"Authorization": f"Bearer {TEST_DASHBOARD_TOKEN}"}
+
+        token_payload = _get_json(f"{base_url}/api/token", headers=headers)
+        assert token_payload["token"]
+        assert _get_json(f"{base_url}/api/events", headers=headers)["events"]
+        assert _get_json(f"{base_url}/api/tasks", headers=headers)["tasks"]
+        assert _get_json(f"{base_url}/api/usage?month=2026-05", headers=headers)["summary"]
+        assert _get_json(f"{base_url}/api/agent-runs", headers=headers)["agent_runs"]
+        assert _post_json(f"{base_url}/api/reset", headers=headers) == {"ok": True}
+
+        _assert_http_error(
+            f"{base_url}/api/pair",
+            method="POST",
+            body={"code": "WRONG-CODE", "deviceName": "Dashboard"},
+            headers=headers,
+            expected_status=400,
+        )
+        state_path = tmp_path / "pairing.json"
+        if state_path.exists():
+            assert PairingStore(state_path)._read_state()["trustedPhones"] == {}
     finally:
         server.shutdown()
         thread.join(timeout=5)
@@ -279,6 +337,29 @@ def _get_json(url: str, *, headers: dict[str, str] | None = None) -> dict:
     request = Request(url, headers=headers or {})
     with urlopen(request, timeout=5) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _assert_http_error(
+    url: str,
+    *,
+    expected_status: int,
+    method: str = "GET",
+    body: dict | None = None,
+    headers: dict[str, str] | None = None,
+) -> None:
+    data = None if body is None else json.dumps(body).encode("utf-8")
+    request = Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/json", **(headers or {})},
+        method=method,
+    )
+    try:
+        urlopen(request, timeout=5)
+    except HTTPError as error:
+        assert error.code == expected_status
+    else:
+        raise AssertionError(f"Expected {url} to return HTTP {expected_status}")
 
 
 def _post_json(url: str, *, body: dict | None = None, headers: dict[str, str] | None = None) -> dict:

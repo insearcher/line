@@ -7,11 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		331A1A14E2C6AFDB7E41EDD3 /* GatewayInvitationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BFD4B5B26EA494A55F43AD2 /* GatewayInvitationTests.swift */; };
+		34958155715B5CBC4B6A25A4 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889FD2FE8FE78463B9561653 /* QRScannerView.swift */; };
 		4BFAB4C730D3249826852E87 /* LineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E93813330ADA74BB12B8BEF /* LineApp.swift */; };
 		5DC845AF6BAB1A4543D4CE57 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B035999D473DEF7BBEA62BF /* ContentView.swift */; };
 		8A487113C426B4390D435056 /* TokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DC3B5211A76ACE527CC21B /* TokenClient.swift */; };
 		9AFDC5486669D0AF4C084EF6 /* EnergyVADTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6196E6A29E2B119A4BDD752 /* EnergyVADTests.swift */; };
 		AAD74837B3C9B89D537DCB98 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = FA2ED9A4D7AB25D0250D71D8 /* LiveKit */; };
+		BD991B0F8C770012BF554DCF /* GatewayInvitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491B70112BABC470A7481689 /* GatewayInvitation.swift */; };
 		BEEBA4BDF21B6B2CE58A75FE /* VoiceClientViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59B37B540717C9F4FA4B1D8 /* VoiceClientViewModel.swift */; };
 		C604BE1345A18B69A97E1239 /* LocalAudioLevelMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C394F2E294412C2D6F87E91 /* LocalAudioLevelMonitor.swift */; };
 		C96B0AAA7AF52CD1B5D8FA4E /* EnergyVAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712032108F8998D4FDAE5B4F /* EnergyVAD.swift */; };
@@ -30,8 +33,11 @@
 
 /* Begin PBXFileReference section */
 		2B035999D473DEF7BBEA62BF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3BFD4B5B26EA494A55F43AD2 /* GatewayInvitationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayInvitationTests.swift; sourceTree = "<group>"; };
+		491B70112BABC470A7481689 /* GatewayInvitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayInvitation.swift; sourceTree = "<group>"; };
 		6B52F57B7CF51F2A3F03AED3 /* Line.shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Line.shared.xcconfig; sourceTree = "<group>"; };
 		712032108F8998D4FDAE5B4F /* EnergyVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyVAD.swift; sourceTree = "<group>"; };
+		889FD2FE8FE78463B9561653 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		94477206B7C4FDF17EFE721C /* VADAudioGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VADAudioGate.swift; sourceTree = "<group>"; };
 		9C394F2E294412C2D6F87E91 /* LocalAudioLevelMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioLevelMonitor.swift; sourceTree = "<group>"; };
 		9E93813330ADA74BB12B8BEF /* LineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineApp.swift; sourceTree = "<group>"; };
@@ -59,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				D6196E6A29E2B119A4BDD752 /* EnergyVADTests.swift */,
+				3BFD4B5B26EA494A55F43AD2 /* GatewayInvitationTests.swift */,
 			);
 			path = LineTests;
 			sourceTree = "<group>";
@@ -68,9 +75,11 @@
 			children = (
 				2B035999D473DEF7BBEA62BF /* ContentView.swift */,
 				712032108F8998D4FDAE5B4F /* EnergyVAD.swift */,
+				491B70112BABC470A7481689 /* GatewayInvitation.swift */,
 				B9C17027FA071665F45DDC04 /* Info.plist */,
 				9E93813330ADA74BB12B8BEF /* LineApp.swift */,
 				9C394F2E294412C2D6F87E91 /* LocalAudioLevelMonitor.swift */,
+				889FD2FE8FE78463B9561653 /* QRScannerView.swift */,
 				C6DC3B5211A76ACE527CC21B /* TokenClient.swift */,
 				94477206B7C4FDF17EFE721C /* VADAudioGate.swift */,
 				A59B37B540717C9F4FA4B1D8 /* VoiceClientViewModel.swift */,
@@ -194,8 +203,10 @@
 			files = (
 				5DC845AF6BAB1A4543D4CE57 /* ContentView.swift in Sources */,
 				C96B0AAA7AF52CD1B5D8FA4E /* EnergyVAD.swift in Sources */,
+				BD991B0F8C770012BF554DCF /* GatewayInvitation.swift in Sources */,
 				4BFAB4C730D3249826852E87 /* LineApp.swift in Sources */,
 				C604BE1345A18B69A97E1239 /* LocalAudioLevelMonitor.swift in Sources */,
+				34958155715B5CBC4B6A25A4 /* QRScannerView.swift in Sources */,
 				8A487113C426B4390D435056 /* TokenClient.swift in Sources */,
 				F6098302302F5B8E410379EB /* VADAudioGate.swift in Sources */,
 				BEEBA4BDF21B6B2CE58A75FE /* VoiceClientViewModel.swift in Sources */,
@@ -207,6 +218,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9AFDC5486669D0AF4C084EF6 /* EnergyVADTests.swift in Sources */,
+				331A1A14E2C6AFDB7E41EDD3 /* GatewayInvitationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

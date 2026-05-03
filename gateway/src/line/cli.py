@@ -154,6 +154,7 @@ def build_parser() -> argparse.ArgumentParser:
     demo_server.add_argument("--agent-runs", type=Path, default=Path("data/agent_runs.jsonl"), help="Agent run state path.")
     demo_server.add_argument("--control", type=Path, default=Path("data/control.jsonl"), help="Control event path.")
     demo_server.add_argument("--pairing-state", type=Path, default=Path("data/pairing_state.json"), help="Pairing state path.")
+    demo_server.add_argument("--dashboard-token", default=None, help="Optional dev dashboard bearer token.")
 
     pair = subparsers.add_parser("pair", help="Create a one-time iPhone pairing code for the demo server.")
     pair.add_argument("--server-url", required=True, help="Reachable demo server URL, for example http://100.x.y.z:8787.")
@@ -368,6 +369,7 @@ def main() -> None:
                 agent_runs_path=args.agent_runs,
                 control_path=args.control,
                 pairing_state_path=args.pairing_state,
+                dashboard_token=args.dashboard_token,
                 env_path=args.env,
             )
         )
