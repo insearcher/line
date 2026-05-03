@@ -13,14 +13,14 @@ def test_pairing_code_completes_once_and_stores_only_hashes(tmp_path) -> None:
     now = datetime(2026, 5, 2, 8, 0, tzinfo=UTC)
 
     session = store.start_pairing(
-        server_url="http://100.127.216.66:8787",
+        server_url="http://192.0.2.10:8787",
         now=now,
     )
     state_before_pair = (tmp_path / "pairing.json").read_text(encoding="utf-8")
 
     assert session.code
     assert session.code not in state_before_pair
-    assert session.payload["serverUrl"] == "http://100.127.216.66:8787"
+    assert session.payload["serverUrl"] == "http://192.0.2.10:8787"
     assert session.payload["code"] == session.code
     assert session.payload["macDeviceId"]
 

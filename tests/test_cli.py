@@ -96,7 +96,7 @@ def test_parser_accepts_pair_command() -> None:
         [
             "pair",
             "--server-url",
-            "http://100.127.216.66:8787",
+            "http://192.0.2.10:8787",
             "--state",
             "data/pairing_state.json",
             "--ttl",
@@ -105,7 +105,7 @@ def test_parser_accepts_pair_command() -> None:
     )
 
     assert args.command == "pair"
-    assert args.server_url == "http://100.127.216.66:8787"
+    assert args.server_url == "http://192.0.2.10:8787"
     assert args.state == Path("data/pairing_state.json")
     assert args.ttl == 300
 
