@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var model = VoiceClientViewModel()
+    @ObservedObject var model: VoiceClientViewModel
+    @State private var isAdvancedSetupExpanded = false
+    @State private var isScannerPresented = false
 
     var body: some View {
         ScrollView {
@@ -16,6 +18,27 @@ struct ContentView: View {
             .padding(.bottom, 32)
         }
         .background(Color(.systemBackground))
+        .sheet(isPresented: $isScannerPresented) {
+            NavigationStack {
+                QRScannerView { value in
+                    isScannerPresented = false
+                    Task { await model.pairFromInvitationString(value) }
+                } onError: { message in
+                    isScannerPresented = false
+                    model.appendScannerError(message)
+                }
+                .ignoresSafeArea()
+                .navigationTitle("Pair Gateway")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            isScannerPresented = false
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private var connectionSection: some View {
@@ -54,26 +77,42 @@ struct ContentView: View {
                 }
             }
 
-            VStack(spacing: 10) {
-                field("Demo server URL", text: $model.demoServerURL)
-                    .keyboardType(.URL)
-                field("Identity", text: $model.identity)
-                field("Room override", text: $model.roomOverride)
+            if !model.isPaired {
+                primaryButton(
+                    title: "Scan Gateway Invitation",
+                    systemImage: "qrcode.viewfinder",
+                    tint: .purple
+                ) {
+                    isScannerPresented = true
+                }
             }
 
-            HStack(spacing: 10) {
-                field("Pairing code", text: $model.pairingCode)
-                    .textInputAutocapitalization(.characters)
+            DisclosureGroup("Advanced", isExpanded: $isAdvancedSetupExpanded) {
+                VStack(spacing: 10) {
+                    field("Demo server URL", text: $model.demoServerURL)
+                        .keyboardType(.URL)
+                    field("Identity", text: $model.identity)
+                    field("Room override", text: $model.roomOverride)
 
-                actionButton(
-                    systemImage: "link.badge.plus",
-                    tint: .purple,
-                    disabled: !model.canPair,
-                    accessibilityLabel: "Pair"
-                ) {
-                    Task { await model.pairDevice() }
+                    HStack(spacing: 10) {
+                        field("Pairing code", text: $model.pairingCode)
+                            .textInputAutocapitalization(.characters)
+
+                        actionButton(
+                            systemImage: "link.badge.plus",
+                            tint: .purple,
+                            disabled: !model.canPair,
+                            accessibilityLabel: "Pair"
+                        ) {
+                            Task { await model.pairDevice() }
+                        }
+                    }
                 }
+                .padding(.top, 10)
+            }
+            .font(.system(size: 14, weight: .semibold))
 
+            HStack(spacing: 10) {
                 actionButton(
                     systemImage: "key.slash",
                     tint: .gray,
@@ -213,6 +252,25 @@ struct ContentView: View {
         .accessibilityLabel(Text(accessibilityLabel))
     }
 
+    private func primaryButton(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.white)
+        .background(tint)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityLabel(Text(title))
+    }
+
     private func panel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             content()
@@ -225,5 +283,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(model: VoiceClientViewModel())
 }
