@@ -1,0 +1,26 @@
+from line.events import EventLog
+
+
+def test_event_log_appends_and_reads_records_in_order(tmp_path) -> None:
+    log = EventLog(tmp_path / "events.jsonl")
+
+    first = log.append("transcript.final", {"text": "Попроси Кодекс проверить очередь"})
+    second = log.append("route.reply", {"reply": "Принял"})
+
+    records = log.read_all()
+    assert [record.id for record in records] == [first.id, second.id]
+    assert [record.type for record in records] == ["transcript.final", "route.reply"]
+    assert records[0].payload == {"text": "Попроси Кодекс проверить очередь"}
+    assert records[1].payload == {"reply": "Принял"}
+    assert records[0].created_at <= records[1].created_at
+
+
+def test_event_log_reads_only_records_after_id(tmp_path) -> None:
+    log = EventLog(tmp_path / "events.jsonl")
+
+    first = log.append("one", {})
+    second = log.append("two", {})
+    third = log.append("three", {})
+
+    records = log.read_after(first.id)
+    assert [record.id for record in records] == [second.id, third.id]

@@ -1,0 +1,12 @@
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example
+*.local.xcconfig
+xcuserdata/
+data/
+logs/
+__pycache__/
+.pytest_cache/
+.DS_Store

@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+import json
+
+import pytest
+
+from line.pairing import PairingError, PairingStore, normalize_pairing_code
+
+
+def test_pairing_code_completes_once_and_stores_only_hashes(tmp_path) -> None:
+    store = PairingStore(tmp_path / "pairing.json")
+    now = datetime(2026, 5, 2, 8, 0, tzinfo=UTC)
+
+    session = store.start_pairing(
+        server_url="http://100.127.216.66:8787",
+        now=now,
+    )
+    state_before_pair = (tmp_path / "pairing.json").read_text(encoding="utf-8")
+
+    assert session.code
+    assert session.code not in state_before_pair
+    assert session.payload["serverUrl"] == "http://100.127.216.66:8787"
+    assert session.payload["code"] == session.code
+    assert session.payload["macDeviceId"]
+
+    credential = store.complete_pairing(
+        code=session.code,
+        device_name="Frolov iPhone",
+        now=now + timedelta(seconds=5),
+    )
+    state_after_pair = json.loads((tmp_path / "pairing.json").read_text(encoding="utf-8"))
+
+    assert credential.token
+    assert credential.phone_id
+    assert credential.mac_device_id == session.payload["macDeviceId"]
+    assert credential.token not in json.dumps(state_after_pair)
+    assert state_after_pair["pendingPairing"] is None
+    assert state_after_pair["trustedPhones"][credential.phone_id]["deviceName"] == "Frolov iPhone"
+    assert store.authenticate(credential.token) is True
+    assert store.authenticate("wrong-token") is False
+
+    with pytest.raises(PairingError, match="No active pairing code"):
+        store.complete_pairing(code=session.code, device_name="Replay", now=now + timedelta(seconds=6))
+
+
+def test_pairing_code_expires(tmp_path) -> None:
+    store = PairingStore(tmp_path / "pairing.json")
+    now = datetime(2026, 5, 2, 8, 0, tzinfo=UTC)
+
+    session = store.start_pairing(
+        server_url="http://127.0.0.1:8787",
+        ttl_seconds=30,
+        now=now,
+    )
+
+    with pytest.raises(PairingError, match="Pairing code expired"):
+        store.complete_pairing(
+            code=session.code,
+            device_name="Late iPhone",
+            now=now + timedelta(seconds=31),
+        )
+
+
+def test_pairing_code_normalization_accepts_spaces_and_dashes() -> None:
+    assert normalize_pairing_code("ab-cd 23") == "ABCD23"
