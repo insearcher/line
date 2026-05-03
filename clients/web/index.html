@@ -13,6 +13,10 @@
           <h1>line demo</h1>
           <p id="status">Disconnected</p>
         </div>
+        <form id="auth-form" class="auth-form">
+          <input id="dashboard-token" type="password" autocomplete="off" placeholder="Dashboard token" />
+          <button id="save-token" type="submit">Use Token</button>
+        </form>
         <div class="actions">
           <button id="connect" type="button">Connect</button>
           <button id="disconnect" type="button" disabled>Disconnect</button>
@@ -41,6 +45,7 @@
       <div id="remote-audio" aria-hidden="true"></div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script src="/dashboard_auth.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

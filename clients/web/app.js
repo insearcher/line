@@ -2,6 +2,8 @@ const statusEl = document.querySelector("#status");
 const connectButton = document.querySelector("#connect");
 const disconnectButton = document.querySelector("#disconnect");
 const resetButton = document.querySelector("#reset");
+const authForm = document.querySelector("#auth-form");
+const dashboardTokenInput = document.querySelector("#dashboard-token");
 const eventsEl = document.querySelector("#events");
 const agentRunsEl = document.querySelector("#agent-runs");
 const usageEl = document.querySelector("#usage");
@@ -10,6 +12,9 @@ const remoteAudioEl = document.querySelector("#remote-audio");
 
 let room = null;
 let lastEventId = null;
+let dashboardToken = "";
+let authRequiredLogged = false;
+const dashboardTokenStorageKey = "line.dashboardToken";
 const conversationTypes = new Set([
   "transcript.final",
   "stt.result",
@@ -31,7 +36,58 @@ function log(message) {
   logsEl.textContent = `[${timestamp}] ${message}\n${logsEl.textContent}`;
 }
 
+function loadDashboardToken() {
+  const tokenFromHash = LineDashboardAuth.tokenFromHash(window.location.hash);
+  if (tokenFromHash) {
+    sessionStorage.setItem(dashboardTokenStorageKey, tokenFromHash);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    return tokenFromHash;
+  }
+  return sessionStorage.getItem(dashboardTokenStorageKey) || "";
+}
+
+function setDashboardToken(token) {
+  dashboardToken = token.trim();
+  authRequiredLogged = false;
+  if (dashboardToken) {
+    sessionStorage.setItem(dashboardTokenStorageKey, dashboardToken);
+    dashboardTokenInput.value = dashboardToken;
+    statusEl.textContent = "Dashboard token set";
+    refresh().catch(reportError);
+    return;
+  }
+  sessionStorage.removeItem(dashboardTokenStorageKey);
+  dashboardTokenInput.value = "";
+  showAuthRequired();
+}
+
+function showAuthRequired() {
+  statusEl.textContent = "Dashboard token required";
+  if (!authRequiredLogged) {
+    log("dashboard token required");
+    authRequiredLogged = true;
+  }
+}
+
+function reportError(error) {
+  if (error.dashboardUnauthorized) {
+    return;
+  }
+  log(error.message);
+}
+
+function requireDashboardToken() {
+  if (dashboardToken) {
+    return true;
+  }
+  showAuthRequired();
+  return false;
+}
+
 async function connect() {
+  if (!requireDashboardToken()) {
+    return;
+  }
   const tokenPayload = await fetchJson("/api/token");
   room = new LivekitClient.Room();
   room.on(LivekitClient.RoomEvent.Connected, () => {
@@ -70,6 +126,10 @@ async function disconnect() {
 }
 
 async function refresh() {
+  if (!dashboardToken) {
+    showAuthRequired();
+    return;
+  }
   const eventsUrl = lastEventId ? `/api/events?after=${encodeURIComponent(lastEventId)}` : "/api/events";
   const eventsPayload = await fetchJson(eventsUrl);
   for (const event of eventsPayload.events) {
@@ -233,6 +293,9 @@ function isAudioTrack(track) {
 }
 
 async function resetDemoState() {
+  if (!requireDashboardToken()) {
+    return;
+  }
   await fetchJson("/api/reset", { method: "POST" });
   lastEventId = null;
   eventsEl.replaceChildren();
@@ -242,15 +305,34 @@ async function resetDemoState() {
 }
 
 async function fetchJson(path, options) {
-  const response = await fetch(path, { cache: "no-store", ...(options || {}) });
+  const requestOptions = options || {};
+  const response = await fetch(path, {
+    ...requestOptions,
+    cache: "no-store",
+    headers: {
+      ...LineDashboardAuth.authHeaders(dashboardToken),
+      ...(requestOptions.headers || {}),
+    },
+  });
+  if (response.status === 401) {
+    showAuthRequired();
+    const error = new Error(`${path} failed with 401`);
+    error.dashboardUnauthorized = true;
+    throw error;
+  }
   if (!response.ok) {
     throw new Error(`${path} failed with ${response.status}`);
   }
   return response.json();
 }
 
-connectButton.addEventListener("click", () => connect().catch((error) => log(error.message)));
-disconnectButton.addEventListener("click", () => disconnect().catch((error) => log(error.message)));
-resetButton.addEventListener("click", () => resetDemoState().catch((error) => log(error.message)));
-setInterval(() => refresh().catch((error) => log(error.message)), 1000);
-refresh().catch((error) => log(error.message));
+authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  setDashboardToken(dashboardTokenInput.value);
+});
+connectButton.addEventListener("click", () => connect().catch(reportError));
+disconnectButton.addEventListener("click", () => disconnect().catch(reportError));
+resetButton.addEventListener("click", () => resetDemoState().catch(reportError));
+
+setDashboardToken(loadDashboardToken());
+setInterval(() => refresh().catch(reportError), 1000);

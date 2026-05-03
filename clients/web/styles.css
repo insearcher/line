@@ -48,6 +48,24 @@ h2 {
   gap: 8px;
 }
 
+.auth-form {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.auth-form input {
+  background: #13161a;
+  border: 1px solid #30343a;
+  border-radius: 6px;
+  color: #f4f5f6;
+  font: inherit;
+  min-height: 36px;
+  min-width: 220px;
+  padding: 0 10px;
+}
+
 button {
   background: #10a7c7;
   border: 0;
@@ -182,5 +200,9 @@ pre {
   .toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .auth-form {
+    margin-left: 0;
   }
 }
