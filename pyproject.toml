@@ -1,0 +1,32 @@
+[project]
+name = "line"
+version = "0.1.0"
+description = "Hands-free voice control layer for AI coding agents."
+readme = "README.md"
+authors = [
+    { name = "line contributors" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "livekit-api>=1.1,<2",
+]
+
+[project.optional-dependencies]
+voice = [
+    "livekit-agents>=1.4,<2",
+    "livekit-plugins-deepgram>=1.4,<2",
+    "livekit-plugins-elevenlabs>=1.4,<2",
+    "livekit-plugins-silero>=1.4,<2",
+]
+
+[project.scripts]
+line = "line:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]

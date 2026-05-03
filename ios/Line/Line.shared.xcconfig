@@ -1,0 +1,5 @@
+LINE_DEVELOPMENT_TEAM =
+LINE_PRODUCT_BUNDLE_IDENTIFIER = com.example.line
+LINE_TEST_PRODUCT_BUNDLE_IDENTIFIER = com.example.line.tests
+
+#include? "Line.local.xcconfig"

@@ -1,0 +1,13 @@
+{
+  "name": "claude-voice-channel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {}
+}

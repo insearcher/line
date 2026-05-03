@@ -1,0 +1,66 @@
+name: Line
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift.git
+    from: "2.13.0"
+configFiles:
+  Debug: Line.shared.xcconfig
+  Release: Line.shared.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+targets:
+  Line:
+    type: application
+    platform: iOS
+    sources:
+      - Line
+    dependencies:
+      - package: LiveKit
+    info:
+      path: Line/Info.plist
+      properties:
+        CFBundleDisplayName: line
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        NSMicrophoneUsageDescription: line uses the microphone to send your spoken commands to your local voice worker.
+        NSLocalNetworkUsageDescription: line connects to the local demo server running on your Mac.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UIBackgroundModes:
+          - audio
+    settings:
+      base:
+        DEVELOPMENT_TEAM: $(LINE_DEVELOPMENT_TEAM)
+        PRODUCT_BUNDLE_IDENTIFIER: $(LINE_PRODUCT_BUNDLE_IDENTIFIER)
+        CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+  LineTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - LineTests
+    dependencies:
+      - target: Line
+    settings:
+      base:
+        DEVELOPMENT_TEAM: $(LINE_DEVELOPMENT_TEAM)
+        PRODUCT_BUNDLE_IDENTIFIER: $(LINE_TEST_PRODUCT_BUNDLE_IDENTIFIER)
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Line:
+    build:
+      targets:
+        Line: all
+        LineTests: [test]
+    test:
+      targets:
+        - LineTests
