@@ -6,6 +6,20 @@ The first public release target is intentionally small: build the macOS server
 and iOS app from source, pair your phone with your Mac, say a marker-gated
 command, and receive a spoken result from a Codex app-server session.
 
+## How it works
+
+```mermaid
+flowchart LR
+  Phone["iPhone app<br/>local VAD"] --> LiveKit["LiveKit Cloud<br/>voice transport"]
+  LiveKit --> Worker["line worker<br/>marker capture"]
+  Worker --> STT["Deepgram STT"]
+  STT --> Command["Captured command"]
+  Command --> Agent["AI agent<br/>Codex app-server"]
+  Agent --> TTS["ElevenLabs TTS"]
+  TTS --> LiveKit
+  LiveKit --> Phone
+```
+
 ## What works today
 
 - Native iOS client with local energy VAD before audio leaves the phone.
