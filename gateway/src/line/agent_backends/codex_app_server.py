@@ -67,6 +67,7 @@ CodexTransportFactory = Callable[
     [CodexAppServerConfig],
     CodexJsonRpcTransport | Awaitable[CodexJsonRpcTransport],
 ]
+VoiceReplyCallback = Callable[[VoiceReply], Awaitable[None] | None]
 
 
 class CodexAppServerBackend:
@@ -90,14 +91,27 @@ class CodexAppServerBackend:
     def model(self) -> str:
         return self.config.model or "codex-default"
 
-    async def run(self, prompt: str) -> AgentJobResult:
+    async def run(
+        self,
+        prompt: str,
+        *,
+        voice_reply_callback: VoiceReplyCallback | None = None,
+    ) -> AgentJobResult:
         try:
-            return await asyncio.wait_for(self._run_serialized(prompt), self.config.timeout_seconds)
+            return await asyncio.wait_for(
+                self._run_serialized(prompt, voice_reply_callback=voice_reply_callback),
+                self.config.timeout_seconds,
+            )
         except TimeoutError as error:
             await self.aclose()
             raise AgentBackendError(f"Codex app-server timed out after {self.config.timeout_seconds:g}s") from error
 
-    async def _run_serialized(self, prompt: str) -> AgentJobResult:
+    async def _run_serialized(
+        self,
+        prompt: str,
+        *,
+        voice_reply_callback: VoiceReplyCallback | None = None,
+    ) -> AgentJobResult:
         lock = self._get_lock()
         async with lock:
             client = await self._get_client()
@@ -111,7 +125,11 @@ class CodexAppServerBackend:
                 ),
             )
             turn_id = _extract_turn_id(turn_result)
-            turn = await client.wait_for_turn_completed(self._thread_id, turn_id)
+            turn = await client.wait_for_turn_completed(
+                self._thread_id,
+                turn_id,
+                voice_reply_callback=voice_reply_callback,
+            )
             spoken_reply = select_codex_spoken_reply(turn)
             full_reply = turn.full_reply
             return AgentJobResult(
@@ -487,13 +505,19 @@ class CodexAppServerClient:
                 return _response_result(method, incoming)
             await self._handle_incoming(incoming)
 
-    async def wait_for_turn_completed(self, thread_id: str, turn_id: str) -> CodexTurnResult:
+    async def wait_for_turn_completed(
+        self,
+        thread_id: str,
+        turn_id: str,
+        *,
+        voice_reply_callback: VoiceReplyCallback | None = None,
+    ) -> CodexTurnResult:
         key = (thread_id, turn_id)
         while True:
             incoming = await self.transport.receive()
             method = str(incoming.get("method", ""))
             params = incoming.get("params") if isinstance(incoming.get("params"), dict) else {}
-            await self._handle_incoming(incoming)
+            await self._handle_incoming(incoming, voice_reply_callback=voice_reply_callback)
             if method == "turn/completed" and params.get("threadId") == thread_id:
                 turn = params.get("turn") if isinstance(params.get("turn"), dict) else {}
                 if turn.get("id") != turn_id:
@@ -509,7 +533,12 @@ class CodexAppServerClient:
     async def aclose(self) -> None:
         await self.transport.aclose()
 
-    async def _handle_incoming(self, message: dict[str, Any]) -> None:
+    async def _handle_incoming(
+        self,
+        message: dict[str, Any],
+        *,
+        voice_reply_callback: VoiceReplyCallback | None = None,
+    ) -> None:
         if "error" in message:
             raise AgentBackendError(f"Codex app-server error: {_format_rpc_error(message['error'])}")
         method = message.get("method")
@@ -517,7 +546,7 @@ class CodexAppServerClient:
             return
         if "id" in message:
             if method == "item/tool/call":
-                await self._handle_dynamic_tool_call(message)
+                await self._handle_dynamic_tool_call(message, voice_reply_callback=voice_reply_callback)
                 return
             raise AgentBackendError(f"Codex app-server requested unsupported client action: {method}")
         params = message.get("params") if isinstance(message.get("params"), dict) else {}
@@ -532,7 +561,12 @@ class CodexAppServerClient:
                 item_key = item_id if isinstance(item_id, str) and item_id else "unknown"
                 self._message_parts.setdefault((thread_id, turn_id, item_key), []).append(delta)
 
-    async def _handle_dynamic_tool_call(self, message: dict[str, Any]) -> None:
+    async def _handle_dynamic_tool_call(
+        self,
+        message: dict[str, Any],
+        *,
+        voice_reply_callback: VoiceReplyCallback | None = None,
+    ) -> None:
         params = message.get("params") if isinstance(message.get("params"), dict) else {}
         request_id = message.get("id")
         thread_id = params.get("threadId")
@@ -550,9 +584,12 @@ class CodexAppServerClient:
             if status not in VOICE_REPLY_STATUSES:
                 status = "reply"
             if text:
-                self._voice_replies.setdefault((thread_id, turn_id), []).append(
-                    VoiceReply(text=text, status=status)
-                )
+                reply = VoiceReply(text=text, status=status)
+                self._voice_replies.setdefault((thread_id, turn_id), []).append(reply)
+                if voice_reply_callback is not None:
+                    callback_result = voice_reply_callback(reply)
+                    if inspect.isawaitable(callback_result):
+                        await callback_result
                 await self.transport.send(_dynamic_tool_response(request_id, "Voice reply delivered.", success=True))
                 return
             await self.transport.send(_dynamic_tool_response(request_id, "Voice reply text is empty.", success=False))

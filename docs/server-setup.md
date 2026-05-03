@@ -82,7 +82,7 @@ The worker:
 3. Runs local Silero VAD before sending speech chunks to Deepgram.
 4. Buffers text between the start and submit markers.
 5. Sends the captured command to Codex app-server.
-6. Speaks the final agent reply through ElevenLabs.
+6. Speaks Codex `reply_to_voice` updates and the final agent reply through ElevenLabs.
 
 ## 5. Pair the phone
 

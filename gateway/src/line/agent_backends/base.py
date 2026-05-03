@@ -13,8 +13,11 @@ DEFAULT_VOICE_SYSTEM_PROMPT = (
     "Reply in English, briefly, and in a form suitable for speech: 1-3 short sentences. "
     "Do not use Markdown tables, long lists, code blocks, or unnecessary preambles. "
     "If the reply_to_voice tool is available, use it for any text that should be spoken. "
-    "Pass only the concise user-facing summary to reply_to_voice, without intermediate reasoning or logs. "
-    "If the task requires longer work, acknowledge it briefly first, then provide the result in the final answer."
+    "Pass only concise user-facing text to reply_to_voice, without intermediate reasoning or logs. "
+    "Use status=\"ack\" when you accept a task and start working. "
+    "For long-running work, use status=\"progress\" about every 3 minutes, only when there is useful new information. "
+    "Use status=\"done\" for the final successful spoken result, or status=\"error\" when the task cannot be completed. "
+    "Keep all reply_to_voice text short and suitable for immediate speech."
 )
 
 VOICE_REPLY_TOOL_NAME = "reply_to_voice"

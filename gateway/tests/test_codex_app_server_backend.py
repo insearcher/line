@@ -62,6 +62,11 @@ def test_build_codex_thread_start_params_advertises_voice_reply_dynamic_tool(tmp
         }
     ]
     assert "reply_to_voice" in params["developerInstructions"]
+    assert "ack" in params["developerInstructions"]
+    assert "progress" in params["developerInstructions"]
+    assert "done" in params["developerInstructions"]
+    assert "error" in params["developerInstructions"]
+    assert "about every 3 minutes" in params["developerInstructions"]
 
 
 def test_build_codex_thread_resume_params_uses_existing_thread_and_full_access(tmp_path: Path) -> None:
@@ -188,6 +193,63 @@ def test_codex_app_server_backend_prefers_reply_to_voice_tool_text(tmp_path: Pat
             "success": True,
         },
     }
+
+
+def test_codex_app_server_backend_streams_reply_to_voice_tool_calls(tmp_path: Path) -> None:
+    events: list[str] = []
+    transport = ScriptedCodexTransport(
+        [
+            {"id": 1, "result": {"userAgent": "codex-test"}},
+            {"id": 2, "result": {"thread": {"id": "thread-1"}, "model": "gpt-5.5"}},
+            {"id": 3, "result": {"turn": {"id": "turn-1", "status": "running"}}},
+            {
+                "id": 41,
+                "method": "item/tool/call",
+                "params": {
+                    "threadId": "thread-1",
+                    "turnId": "turn-1",
+                    "tool": "reply_to_voice",
+                    "arguments": {"text": "Accepted, checking now.", "status": "ack"},
+                },
+            },
+            {
+                "method": "turn/completed",
+                "params": {"threadId": "thread-1", "turn": {"id": "turn-1", "status": "completed"}},
+            },
+        ],
+        events=events,
+    )
+    backend = CodexAppServerBackend(
+        CodexAppServerConfig(cwd=tmp_path, model="gpt-5.5"),
+        transport_factory=lambda config: transport,
+    )
+    streamed: list[VoiceReply] = []
+
+    async def run_case() -> None:
+        def capture_streamed_reply(reply: VoiceReply) -> None:
+            streamed.append(reply)
+            events.append(f"callback:{reply.status}")
+
+        await backend.run(
+            "check tests",
+            voice_reply_callback=capture_streamed_reply,
+        )
+
+    asyncio.run(run_case())
+
+    assert streamed == [VoiceReply(text="Accepted, checking now.", status="ack")]
+    assert events == [
+        "send:initialize",
+        "receive:initialize",
+        "send:thread/start",
+        "receive:thread/start",
+        "send:turn/start",
+        "receive:turn/start",
+        "receive:item/tool/call",
+        "callback:ack",
+        "send:tool-response",
+        "receive:turn/completed",
+    ]
 
 
 def test_codex_app_server_backend_falls_back_to_last_agent_message(tmp_path: Path) -> None:
@@ -362,18 +424,32 @@ def test_codex_app_server_backend_can_use_existing_websocket_endpoint(tmp_path: 
 
 
 class ScriptedCodexTransport:
-    def __init__(self, incoming: list[dict]) -> None:
+    def __init__(self, incoming: list[dict], *, events: list[str] | None = None) -> None:
         self.incoming = list(incoming)
         self.sent: list[dict] = []
         self.closed = False
+        self.events = events
 
     async def send(self, message: dict) -> None:
+        if self.events is not None:
+            method = str(message.get("method", "tool-response"))
+            self.events.append(f"send:{method}")
         self.sent.append(message)
 
     async def receive(self) -> dict:
         if not self.incoming:
             raise AssertionError("No scripted Codex message available")
-        return self.incoming.pop(0)
+        message = self.incoming.pop(0)
+        if self.events is not None:
+            method = str(message.get("method", ""))
+            if not method and message.get("id") == 1:
+                method = "initialize"
+            elif not method and message.get("id") == 2:
+                method = "thread/start"
+            elif not method and message.get("id") == 3:
+                method = "turn/start"
+            self.events.append(f"receive:{method or 'response'}")
+        return message
 
     async def aclose(self) -> None:
         self.closed = True
