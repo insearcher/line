@@ -22,8 +22,8 @@ local testing and keep it bound to `127.0.0.1`.
 
 Channels can also be disabled at the Claude organization level. If Claude Code
 reports that Channels are not enabled for the organization, this bridge cannot be
-used in that org. Use the Claude CLI backend in [advanced modes](advanced.md)
-instead.
+used in that org. Use the Claude CLI backend in
+[advanced modes](../../docs/advanced.md) instead.
 
 ## Install
 

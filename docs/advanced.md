@@ -4,7 +4,8 @@ The public v0.1 happy path is Codex app-server. The repository also contains
 older MVP paths that are useful for development but should be treated as
 experimental.
 
-Run gateway commands from `gateway/`.
+Command examples include `cd gateway` when they are intended to run from the
+repository root.
 
 ## Router mode
 
@@ -91,5 +92,6 @@ Unlike Codex app-server, this is a separate bridge process hosted by Claude Code
 through MCP and reached by the gateway over local HTTP/SSE.
 
 The Claude Code Channels bridge is documented separately in
-[docs/cc-channel.md](cc-channel.md). It requires channel support in the Claude
-organization and is not part of the main release path.
+[`bridges/cc-channel/README.md`](../bridges/cc-channel/README.md). It requires
+channel support in the Claude organization and is not part of the main release
+path.

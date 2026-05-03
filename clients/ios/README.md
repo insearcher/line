@@ -1,8 +1,10 @@
-# iOS Build
+# iOS Client
 
 The iOS app is source-built for the v0.1 release. It connects to the local demo
 gateway, joins the LiveKit room, applies local energy VAD, and plays remote agent
 audio.
+
+Run commands from this directory unless another directory is shown.
 
 ## Requirements
 
@@ -14,7 +16,6 @@ audio.
 ## Generate the project
 
 ```bash
-cd clients/ios
 xcodegen generate
 open Line.xcodeproj
 ```
@@ -25,7 +26,7 @@ The checked-in scheme is `Line`; the public app display name is `line`.
 
 The checked-in project intentionally does not include a personal Apple
 development team. Put local signing values in the ignored file
-`clients/ios/Line.local.xcconfig`:
+`Line.local.xcconfig` in this directory:
 
 ```xcconfig
 LINE_DEVELOPMENT_TEAM =
@@ -37,7 +38,6 @@ Fill those values with your Apple team and bundle identifiers, then regenerate
 the project:
 
 ```bash
-cd clients/ios
 xcodegen generate
 open Line.xcodeproj
 ```
@@ -77,7 +77,7 @@ need a reachable LAN or private VPN address.
 
 ```bash
 xcodebuild test \
-  -project clients/ios/Line.xcodeproj \
+  -project Line.xcodeproj \
   -scheme Line \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0.1'
 ```
