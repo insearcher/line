@@ -9,7 +9,7 @@ import {
 
 const TEST_AUTH_VALUE = "test-auth-value";
 
-describe("Claude voice channel helpers", () => {
+describe("CC channel helpers", () => {
   test("formats named SSE events", () => {
     expect(formatSse("reply", { chat_id: "voice", text: "Done" })).toBe(
       'event: reply\ndata: {"chat_id":"voice","text":"Done"}\n\n',

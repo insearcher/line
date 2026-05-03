@@ -15,6 +15,9 @@ TEST_TTS_MODEL = "test-tts-model"
 
 
 def test_voice_config_reads_required_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DEEPGRAM_LANGUAGE", raising=False)
+    monkeypatch.delenv("TTS_PROVIDER", raising=False)
+    monkeypatch.delenv("TTS_LANGUAGE", raising=False)
     monkeypatch.setenv("LIVEKIT_URL", "wss://example.livekit.cloud")
     monkeypatch.setenv("LIVEKIT_API_KEY", TEST_LIVEKIT_KEY)
     monkeypatch.setenv("LIVEKIT_API_SECRET", TEST_LIVEKIT_HMAC)

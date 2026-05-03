@@ -6,7 +6,7 @@ developer-controlled local workflow for trusted devices.
 ## Trust boundaries
 
 - The iOS app is trusted after local pairing.
-- The macOS demo server is trusted and should run on localhost, a trusted LAN, or
+- The local gateway is trusted and should run on localhost, a trusted LAN, or
   a private VPN.
 - LiveKit, Deepgram, and ElevenLabs receive the audio/text required by the
   configured workflow.
@@ -32,7 +32,7 @@ Never commit:
 - Deepgram or ElevenLabs keys
 - pairing state
 - room tokens
-- runtime logs under `data/` or `logs/`
+- runtime logs under `gateway/data/` or `gateway/logs/`
 
 ## Network exposure
 

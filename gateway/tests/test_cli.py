@@ -118,9 +118,9 @@ def test_parser_accepts_lowlevel_worker_command() -> None:
             "line-dev",
             "--identity",
             "line-worker",
-            "--claude-channel-url",
+            "--cc-channel-url",
             "http://127.0.0.1:8790",
-            "--claude-channel-token",
+            "--cc-channel-token",
             TEST_AUTH_VALUE,
             "--agent-backend",
             "claude-cli",
@@ -150,8 +150,8 @@ def test_parser_accepts_lowlevel_worker_command() -> None:
     assert args.command == "lowlevel-worker"
     assert args.room == "line-dev"
     assert args.identity == "line-worker"
-    assert args.claude_channel_url == "http://127.0.0.1:8790"
-    assert args.claude_channel_token == TEST_AUTH_VALUE
+    assert args.cc_channel_url == "http://127.0.0.1:8790"
+    assert args.cc_channel_token == TEST_AUTH_VALUE
     assert args.agent_backend == "claude-cli"
     assert args.agent_model == "haiku"
     assert args.agent_cwd == Path("/tmp")
@@ -177,10 +177,10 @@ def test_parser_uses_single_word_cancel_default() -> None:
     assert args.capture_cancel == "cancel"
 
 
-def test_parser_accepts_claude_channel_send_command() -> None:
+def test_parser_accepts_cc_channel_send_command() -> None:
     args = build_parser().parse_args(
         [
-            "claude-channel-send",
+            "cc-channel-send",
             "Check tests",
             "--url",
             "http://127.0.0.1:8790",
@@ -189,7 +189,7 @@ def test_parser_accepts_claude_channel_send_command() -> None:
         ]
     )
 
-    assert args.command == "claude-channel-send"
+    assert args.command == "cc-channel-send"
     assert args.text == "Check tests"
     assert args.url == "http://127.0.0.1:8790"
     assert args.token == TEST_AUTH_VALUE

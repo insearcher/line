@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "claude-voice-channel",
+      "name": "cc-channel",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.22.0",
         "zod": "^4.1.12",

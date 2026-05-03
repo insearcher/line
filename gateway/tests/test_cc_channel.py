@@ -4,9 +4,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import threading
 
-from line.claude_channel import (
-    ClaudeChannelClient,
-    ClaudeReply,
+from line.cc_channel import (
+    CcChannelClient,
+    CcReply,
     parse_sse_payload,
 )
 
@@ -35,7 +35,7 @@ def test_send_voice_message_posts_json_with_sender_header() -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        client = ClaudeChannelClient(
+        client = CcChannelClient(
             base_url=f"http://127.0.0.1:{server.server_port}",
             token=TEST_AUTH_VALUE,
             timeout=1.0,
@@ -64,7 +64,7 @@ def test_parse_sse_payload_returns_reply_events_only() -> None:
     )
 
     assert parse_sse_payload(payload) == [
-        ClaudeReply(
+        CcReply(
             chat_id="voice",
             text="Accepted",
             status="ack",
