@@ -8,6 +8,7 @@ from pathlib import Path
 import secrets
 import string
 from typing import Any
+from urllib.parse import urlencode
 from uuid import uuid4
 
 
@@ -154,6 +155,7 @@ def format_pairing_instructions(session: PairingSession) -> str:
         [
             f"Pairing code: {session.code}",
             f"Expires at: {session.expires_at}",
+            f"Deep link: {_pairing_deep_link(session)}",
             "Payload JSON:",
             json.dumps(session.payload, ensure_ascii=False, sort_keys=True),
         ]
@@ -172,6 +174,18 @@ def _new_state() -> dict[str, Any]:
 def _new_pairing_code() -> str:
     raw = "".join(secrets.choice(PAIRING_CODE_ALPHABET) for _ in range(8))
     return f"{raw[:4]}-{raw[4:]}"
+
+
+def _pairing_deep_link(session: PairingSession) -> str:
+    query = urlencode(
+        {
+            "serverUrl": str(session.payload["serverUrl"]),
+            "code": session.code,
+            "macDeviceId": str(session.payload["macDeviceId"]),
+            "expiresAt": session.expires_at,
+        }
+    )
+    return f"line://pair?{query}"
 
 
 def _hash_secret(kind: str, secret: str) -> str:
