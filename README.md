@@ -37,8 +37,8 @@ flowchart LR
 ## What works today
 
 - Native iOS client with local energy VAD before audio leaves the phone.
-- Local Python gateway for pairing, LiveKit tokens, event logs, and voice
-  worker orchestration.
+- Local Python gateway for pairing invitations, LiveKit tokens, event logs, and
+  voice worker orchestration.
 - LiveKit Cloud transport.
 - Deepgram speech-to-text and ElevenLabs text-to-speech.
 - Marker capture mode: say `start command`, wait for the cue, speak the command, then
@@ -80,7 +80,7 @@ uv run line doctor --agent-backend codex-app-server --agent-cwd /path/to/workspa
 uv run pytest -q
 ```
 
-Start the local pairing/token server:
+Start the local gateway:
 
 ```bash
 uv run line demo-server --host 0.0.0.0 --room line-dev --identity mac-test
@@ -110,14 +110,16 @@ open Line.xcodeproj
 
 Set your signing team and bundle identifier in ignored
 `clients/ios/Line.local.xcconfig`, regenerate the Xcode project, then run the app
-on your iPhone. From the repository root, pair it with the local gateway:
+on your iPhone. From the repository root, create a gateway invitation:
 
 ```bash
 cd gateway
 uv run line pair --server-url http://YOUR-MAC-LAN-IP:8787
 ```
 
-Enter the pairing code in the iOS app. After the phone connects, say:
+Scan the printed QR code in the iOS app, or open the printed `line://pair` deep
+link on the phone. The app stores the returned device token in Keychain. After
+the phone connects, say:
 
 ```text
 start command
