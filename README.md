@@ -9,11 +9,16 @@ command, and receive a spoken result from a Codex app-server session.
 ## Repository layout
 
 ```text
-gateway/             Python package, CLI, local gateway, worker, and dashboard
+gateway/             Python package, CLI, local gateway API, and worker
+clients/web/         Static browser client served by the local gateway API
 clients/ios/         Source-built iOS client
 bridges/cc-channel/  Experimental Claude Code channel bridge
 docs/                Repository-wide setup and security docs
 ```
+
+Codex app-server support lives inside the Python gateway as an agent backend.
+`bridges/` is for external sidecar adapters such as the Claude Code channel
+bridge.
 
 ## How it works
 

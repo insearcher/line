@@ -45,8 +45,9 @@ uv run line doctor --agent-backend codex-app-server --agent-cwd /path/to/workspa
 
 ## 3. Start the local gateway
 
-The demo server provides LiveKit tokens, pairing, reset controls, event logs,
-and the browser dashboard.
+The demo server command currently starts the local gateway HTTP API. It provides
+LiveKit tokens, pairing, reset controls, event logs, and serves the static web
+client from `clients/web`.
 
 For a physical iPhone, bind to all interfaces on a trusted LAN or private VPN:
 

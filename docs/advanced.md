@@ -22,7 +22,8 @@ The queue is written to `data/line_tasks.jsonl`.
 
 ## Browser dashboard
 
-The demo server serves a local dashboard at:
+The gateway HTTP API server can serve the static web client from `clients/web`
+at:
 
 ```text
 http://127.0.0.1:8787
@@ -32,6 +33,9 @@ It is useful for inspecting events, usage counters, queued router tasks, and
 agent run state during development.
 
 ## External Codex endpoint
+
+This is still a gateway agent backend: the worker either starts Codex app-server
+itself or connects to an already running Codex app-server endpoint.
 
 You can start Codex app-server yourself and point line at it:
 
@@ -51,6 +55,11 @@ uv run line lowlevel-worker \
 ```
 
 Without `--codex-thread-id`, line creates a new thread on the endpoint.
+
+For a VM or another computer, prefer an SSH tunnel or trusted private network
+instead of exposing Codex app-server directly. In this mode `--agent-cwd` is a
+path in the Codex app-server environment, not necessarily a path on the Mac
+running the gateway.
 
 ## Claude CLI mode
 
@@ -77,6 +86,9 @@ uv run line lowlevel-worker \
 Set `--agent-permission-mode` explicitly if you want unattended edits.
 
 ## CC channel bridge
+
+Unlike Codex app-server, this is a separate bridge process hosted by Claude Code
+through MCP and reached by the gateway over local HTTP/SSE.
 
 The Claude Code Channels bridge is documented separately in
 [docs/cc-channel.md](cc-channel.md). It requires channel support in the Claude

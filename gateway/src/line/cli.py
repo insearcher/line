@@ -9,7 +9,7 @@ from pathlib import Path
 import shutil
 import sys
 
-from line.agent_backend import (
+from line.agent_backends import (
     AgentBackendError,
     AgentJobResult,
     ClaudeCliBackend,
@@ -141,13 +141,13 @@ def build_parser() -> argparse.ArgumentParser:
     token.add_argument("--room", default="line-dev", help="LiveKit room name.")
     token.add_argument("--identity", default="iphone", help="Participant identity.")
 
-    demo_server = subparsers.add_parser("demo-server", help="Run the local browser dashboard server.")
+    demo_server = subparsers.add_parser("demo-server", help="Run the local gateway HTTP API server.")
     demo_server.add_argument("--env", type=Path, default=Path(".env"), help="Optional .env file to load.")
     demo_server.add_argument("--host", default="127.0.0.1", help="HTTP host.")
     demo_server.add_argument("--port", type=int, default=8787, help="HTTP port.")
     demo_server.add_argument("--room", default="line-dev", help="LiveKit room name.")
     demo_server.add_argument("--identity", default="mac-test", help="Browser participant identity.")
-    demo_server.add_argument("--web-dir", type=Path, default=Path("web"), help="Static dashboard directory.")
+    demo_server.add_argument("--web-dir", type=Path, default=Path("../clients/web"), help="Static web client directory.")
     demo_server.add_argument("--events", type=Path, default=Path("data/events.jsonl"), help="Event log path.")
     demo_server.add_argument("--usage", type=Path, default=Path("data/usage.jsonl"), help="Usage log path.")
     demo_server.add_argument("--queue", type=Path, default=DEFAULT_QUEUE_PATH, help="Path to JSONL task queue.")
