@@ -81,6 +81,8 @@ def test_parser_accepts_demo_server_command() -> None:
             "line-dev",
             "--identity",
             "mac-test",
+            "--dashboard-token",
+            TEST_AUTH_VALUE,
         ]
     )
 
@@ -90,6 +92,7 @@ def test_parser_accepts_demo_server_command() -> None:
     assert args.room == "line-dev"
     assert args.identity == "mac-test"
     assert args.web_dir == Path("../clients/web")
+    assert args.dashboard_token == TEST_AUTH_VALUE
 
 
 def test_parser_accepts_pair_command() -> None:
