@@ -2,8 +2,8 @@
 
 This directory contains the Python package and CLI for the local line gateway.
 It owns pairing, LiveKit token issuance, event logs, speech worker orchestration,
-the static dashboard served by `line demo-server`, and in-process agent
-adapters.
+the local gateway HTTP API, and in-process agent adapters. The static browser
+client lives in `../clients/web` and can be served by `line demo-server`.
 
 ## Setup
 
@@ -22,7 +22,6 @@ Commands are intended to run from this directory. Relative defaults therefore
 resolve under `gateway/`:
 
 - `.env`
-- `web/`
 - `data/*.jsonl`
 - `logs/`
 

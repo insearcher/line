@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from line.events import EventLog
 from line import lowlevel_worker
-from line.agent_backend import AgentJobResult, VoiceReply
+from line.agent_backends import AgentJobResult, VoiceReply
 from line.agent_runs import AgentRunStatus, AgentRunStore
 from line.capture import CaptureConfig, CaptureMode, MarkerCaptureSession
 from line.cc_channel import CcReply

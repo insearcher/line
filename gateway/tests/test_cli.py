@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import pytest
 
-from line.agent_backend import AgentJobResult
+from line.agent_backends import AgentJobResult
 from line.capture import CaptureMode
 from line.cli import build_parser, main, run_agent_once, run_dry_run
 
@@ -89,6 +89,7 @@ def test_parser_accepts_demo_server_command() -> None:
     assert args.port == 8787
     assert args.room == "line-dev"
     assert args.identity == "mac-test"
+    assert args.web_dir == Path("../clients/web")
 
 
 def test_parser_accepts_pair_command() -> None:

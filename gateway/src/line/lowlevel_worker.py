@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from line.agent_backend import (
+from line.agent_backends import (
     AgentBackendError,
     AgentJobResult,
     ClaudeCliBackend,
