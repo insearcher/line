@@ -125,8 +125,9 @@ Check the tests in this project and briefly report the result
 send command
 ```
 
-The worker sends only the captured command text to Codex, then speaks the final
-agent reply back through the LiveKit room.
+The worker sends only the captured command text to Codex, then speaks Codex
+`reply_to_voice` updates and the final agent reply back through the LiveKit
+room.
 
 ## Documentation
 

@@ -174,6 +174,55 @@ def test_run_agent_backend_job_records_voice_reply_tool_payload(tmp_path) -> Non
     assert runs.list_runs()[0].reply == "The project is in the MVP folder."
 
 
+def test_run_agent_backend_job_streams_voice_replies_and_skips_duplicate_terminal_speech(tmp_path) -> None:
+    speaker = FakeSpeaker()
+    events = EventLog(tmp_path / "events.jsonl")
+    runs = AgentRunStore(tmp_path / "agent_runs.jsonl")
+    run = runs.create_queued(backend="codex", model="gpt-5.5", prompt="check tests")
+    backend = StreamingFakeAgentBackend(
+        streamed_replies=(
+            VoiceReply(text="Accepted, checking now.", status="ack"),
+            VoiceReply(text="Tests are running.", status="progress"),
+            VoiceReply(text="Tests passed.", status="done"),
+        ),
+        final_reply="Tests passed.",
+    )
+
+    asyncio.run(
+        lowlevel_worker.run_agent_backend_job(
+            agent_backend=backend,
+            prompt="check tests",
+            tts_publisher=speaker,
+            events=events,
+            agent_runs=runs,
+            run=run,
+        )
+    )
+
+    assert speaker.spoken_texts == [
+        "Accepted, checking now.",
+        "Tests are running.",
+        "Tests passed.",
+    ]
+    records = events.read_all()
+    assert [event.type for event in records] == [
+        "agent_backend.running",
+        "agent_backend.voice_reply",
+        "agent_backend.voice_reply",
+        "agent_backend.voice_reply",
+        "agent_backend.done",
+    ]
+    assert records[1].payload == {
+        "backend": "codex",
+        "run_id": run.id,
+        "status": "ack",
+        "text": "Accepted, checking now.",
+    }
+    assert records[3].payload["status"] == "done"
+    assert records[4].payload["reply"] == "Tests passed."
+    assert runs.list_runs()[0].reply == "Tests passed."
+
+
 def test_recognize_and_route_speech_marker_mode_buffers_until_submit(tmp_path) -> None:
     speaker = FakeSpeechQueue()
     backend = FakeAgentBackend(reply="done")
@@ -788,6 +837,34 @@ class FakeAgentBackend:
             full_reply=self.full_reply,
             spoken_reply=self.reply,
             voice_replies=self.voice_replies,
+        )
+
+
+class StreamingFakeAgentBackend:
+    label = "codex"
+    model = "gpt-5.5"
+
+    def __init__(self, *, streamed_replies: tuple[VoiceReply, ...], final_reply: str) -> None:
+        self.streamed_replies = streamed_replies
+        self.final_reply = final_reply
+        self.prompts: list[str] = []
+
+    async def run(self, prompt: str, *, voice_reply_callback=None) -> AgentJobResult:
+        self.prompts.append(prompt)
+        assert voice_reply_callback is not None
+        for reply in self.streamed_replies:
+            result = voice_reply_callback(reply)
+            if asyncio.iscoroutine(result):
+                await result
+        return AgentJobResult(
+            prompt=prompt,
+            reply=self.final_reply,
+            model=self.model,
+            stdout=self.final_reply,
+            stderr="",
+            full_reply=self.final_reply,
+            spoken_reply=self.final_reply,
+            voice_replies=self.streamed_replies,
         )
 
 

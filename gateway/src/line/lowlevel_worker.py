@@ -16,6 +16,7 @@ from line.agent_backends import (
     ClaudeCliConfig,
     CodexAppServerBackend,
     CodexAppServerConfig,
+    VoiceReply,
 )
 from line.agent_runs import AgentRunRecord, AgentRunStore
 from line.capture import CaptureAction, CaptureActionKind, CaptureConfig, CaptureMode, MarkerCaptureSession
@@ -843,6 +844,27 @@ async def run_agent_backend_job(
     run: AgentRunRecord | None = None,
 ) -> None:
     label = str(getattr(agent_backend, "label", "agent"))
+    terminal_voice_reply_spoken = False
+
+    async def stream_voice_reply(reply: VoiceReply) -> None:
+        nonlocal terminal_voice_reply_spoken
+        spoken_text = shorten_for_voice(reply.text)
+        if not spoken_text:
+            return
+        events.append(
+            "agent_backend.voice_reply",
+            {
+                "backend": label,
+                "run_id": run.id if run else None,
+                "status": reply.status,
+                "text": spoken_text,
+            },
+        )
+        if tts_publisher is not None:
+            await deliver_speech(tts_publisher, spoken_text)
+            if reply.status in {"done", "reply", "error"}:
+                terminal_voice_reply_spoken = True
+
     if agent_runs is not None and run is not None:
         run = agent_runs.mark_running(run.id)
     events.append(
@@ -850,7 +872,11 @@ async def run_agent_backend_job(
         {"backend": label, "run_id": run.id if run else None, "text": prompt},
     )
     try:
-        result: AgentJobResult = await agent_backend.run(prompt)
+        result = await run_agent_backend_with_voice_replies(
+            agent_backend,
+            prompt,
+            voice_reply_callback=stream_voice_reply,
+        )
     except AgentBackendError as error:
         message = f"{label} returned an error: {format_error(error)}"
         events.append(
@@ -893,8 +919,27 @@ async def run_agent_backend_job(
             "voice_replies": voice_replies,
         },
     )
-    if tts_publisher is not None:
+    if tts_publisher is not None and not terminal_voice_reply_spoken:
         await deliver_speech(tts_publisher, spoken_reply)
+
+
+async def run_agent_backend_with_voice_replies(
+    agent_backend: Any,
+    prompt: str,
+    *,
+    voice_reply_callback: Any,
+) -> AgentJobResult:
+    run = getattr(agent_backend, "run")
+    try:
+        parameters = inspect.signature(run).parameters
+    except (TypeError, ValueError):
+        return await run(prompt)
+    if "voice_reply_callback" in parameters or any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    ):
+        return await run(prompt, voice_reply_callback=voice_reply_callback)
+    return await run(prompt)
 
 
 async def consume_cc_replies(

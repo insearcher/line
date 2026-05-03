@@ -19,6 +19,7 @@ const conversationTypes = new Set([
   "capture.cancelled",
   "route.result",
   "agent_backend.dispatched",
+  "agent_backend.voice_reply",
   "agent_backend.done",
   "agent_backend.failed",
   "stt.empty",
@@ -120,6 +121,9 @@ function renderConversationEvent(event) {
   }
   if (event.type === "agent_backend.dispatched") {
     return [renderEventHeader(`You -> ${event.payload.backend}`, time), renderEventMessage(event.payload.text, "event-user")];
+  }
+  if (event.type === "agent_backend.voice_reply") {
+    return [renderEventHeader(`${event.payload.backend} ${event.payload.status}`, time), renderEventMessage(event.payload.text, "event-agent")];
   }
   if (event.type === "agent_backend.done") {
     return [renderEventHeader(`${event.payload.backend} -> You`, time), renderEventMessage(event.payload.reply, "event-agent")];
