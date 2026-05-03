@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/livekit/webrtc-xcframework.git",
       "state" : {
-        "revision" : "f6017e189972b86f90e0ec406b1629828bc75748",
-        "version" : "144.7559.3"
+        "revision" : "29ba04430bca89c866d3eda2d08b7ca653607a66",
+        "version" : "144.7559.04"
       }
     }
   ],
