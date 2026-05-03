@@ -14,7 +14,7 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Include commands, device type, iOS version, and server logs when relevant.
+      description: Include commands, device type, iOS version, and gateway logs when relevant.
       placeholder: |
         1. Run ...
         2. Pair ...

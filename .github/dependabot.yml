@@ -9,7 +9,7 @@ updates:
       - "github-actions"
 
   - package-ecosystem: "uv"
-    directory: "/"
+    directory: "/gateway"
     schedule:
       interval: "weekly"
     labels:
@@ -17,7 +17,7 @@ updates:
       - "python"
 
   - package-ecosystem: "bun"
-    directory: "/channels/claude-voice-channel"
+    directory: "/bridges/cc-channel"
     schedule:
       interval: "weekly"
     labels:
@@ -25,7 +25,7 @@ updates:
       - "javascript"
 
   - package-ecosystem: "swift"
-    directory: "/ios/Line"
+    directory: "/clients/ios"
     schedule:
       interval: "weekly"
     labels:

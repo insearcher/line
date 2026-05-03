@@ -30,7 +30,7 @@
 
 /* Begin PBXFileReference section */
 		2B035999D473DEF7BBEA62BF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		64683D3CDA89BFB1E5F196E6 /* Line.shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Line.shared.xcconfig; sourceTree = "<group>"; };
+		6B52F57B7CF51F2A3F03AED3 /* Line.shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Line.shared.xcconfig; sourceTree = "<group>"; };
 		712032108F8998D4FDAE5B4F /* EnergyVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyVAD.swift; sourceTree = "<group>"; };
 		94477206B7C4FDF17EFE721C /* VADAudioGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VADAudioGate.swift; sourceTree = "<group>"; };
 		9C394F2E294412C2D6F87E91 /* LocalAudioLevelMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioLevelMonitor.swift; sourceTree = "<group>"; };
@@ -78,23 +78,23 @@
 			path = Line;
 			sourceTree = "<group>";
 		};
-		41B4E3CA0634551B126B30D1 /* Line */ = {
-			isa = PBXGroup;
-			children = (
-				64683D3CDA89BFB1E5F196E6 /* Line.shared.xcconfig */,
-			);
-			name = Line;
-			path = .;
-			sourceTree = "<group>";
-		};
 		63B92EA899D7843F41D21586 = {
 			isa = PBXGroup;
 			children = (
+				B57B53B4A0051A442D59B25E /* ios */,
 				3340CCEA2CAAC67762F845E1 /* Line */,
-				41B4E3CA0634551B126B30D1 /* Line */,
 				1A33DE06810F370563DF743C /* LineTests */,
 				D6F5E98E87D8B809FC0FE5DC /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		B57B53B4A0051A442D59B25E /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				6B52F57B7CF51F2A3F03AED3 /* Line.shared.xcconfig */,
+			);
+			name = ios;
+			path = .;
 			sourceTree = "<group>";
 		};
 		D6F5E98E87D8B809FC0FE5DC /* Products */ = {
@@ -301,7 +301,7 @@
 		};
 		95A21BFEAC831BCA4CA199BE /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 64683D3CDA89BFB1E5F196E6 /* Line.shared.xcconfig */;
+			baseConfigurationReference = 6B52F57B7CF51F2A3F03AED3 /* Line.shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -358,7 +358,7 @@
 		};
 		C44C557402BE973AE3F32AB0 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 64683D3CDA89BFB1E5F196E6 /* Line.shared.xcconfig */;
+			baseConfigurationReference = 6B52F57B7CF51F2A3F03AED3 /* Line.shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

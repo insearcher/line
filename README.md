@@ -2,9 +2,18 @@
 
 line is a hands-free voice control layer for AI coding agents.
 
-The first public release target is intentionally small: build the macOS server
+The first public release target is intentionally small: build the local gateway
 and iOS app from source, pair your phone with your Mac, say a marker-gated
 command, and receive a spoken result from a Codex app-server session.
+
+## Repository layout
+
+```text
+gateway/             Python package, CLI, local gateway, worker, and dashboard
+clients/ios/         Source-built iOS client
+bridges/cc-channel/  Experimental Claude Code channel bridge
+docs/                Repository-wide setup and security docs
+```
 
 ## How it works
 
@@ -23,7 +32,7 @@ flowchart LR
 ## What works today
 
 - Native iOS client with local energy VAD before audio leaves the phone.
-- Local macOS Python server for pairing, LiveKit tokens, event logs, and voice
+- Local Python gateway for pairing, LiveKit tokens, event logs, and voice
   worker orchestration.
 - LiveKit Cloud transport.
 - Deepgram speech-to-text and ElevenLabs text-to-speech.
@@ -51,9 +60,10 @@ flowchart LR
 
 ## Quickstart
 
-Install dependencies and run the local checks:
+Install gateway dependencies and run the local checks:
 
 ```bash
+cd gateway
 uv sync --all-extras --dev
 cp .env.example .env
 ```
@@ -85,19 +95,20 @@ uv run line lowlevel-worker \
   --capture-cancel "cancel"
 ```
 
-Build and run the iOS app:
+From the repository root, build and run the iOS app:
 
 ```bash
-cd ios/Line
+cd clients/ios
 xcodegen generate
 open Line.xcodeproj
 ```
 
 Set your signing team and bundle identifier in ignored
-`ios/Line/Line.local.xcconfig`, regenerate the Xcode project, then run the app
-on your iPhone. Pair it with the local server:
+`clients/ios/Line.local.xcconfig`, regenerate the Xcode project, then run the app
+on your iPhone. From the repository root, pair it with the local gateway:
 
 ```bash
+cd gateway
 uv run line pair --server-url http://YOUR-MAC-LAN-IP:8787
 ```
 
@@ -114,22 +125,26 @@ agent reply back through the LiveKit room.
 
 ## Documentation
 
-- [Server setup](docs/server-setup.md)
+- [Gateway setup](docs/server-setup.md)
 - [iOS build](docs/ios-build.md)
 - [Security model](docs/security.md)
 - [Advanced and experimental modes](docs/advanced.md)
-- [Claude channel bridge](docs/claude-channel.md)
+- [CC channel bridge](docs/cc-channel.md)
 
 ## Development
 
 ```bash
+cd gateway
 uv run pytest -q
-cd channels/claude-voice-channel
+```
+
+```bash
+cd bridges/cc-channel
 bun test
 ```
 
 The iOS project is generated with XcodeGen from
-`ios/Line/project.yml`.
+`clients/ios/project.yml`.
 
 ## License
 

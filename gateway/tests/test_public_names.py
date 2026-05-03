@@ -63,8 +63,14 @@ def test_working_tree_does_not_contain_cyrillic_text() -> None:
     assert offenders == []
 
 
+def test_public_hygiene_scan_root_is_repository_root() -> None:
+    assert (_scan_root() / "gateway").is_dir()
+    assert (_scan_root() / "clients").is_dir()
+    assert (_scan_root() / "bridges").is_dir()
+
+
 def _find_forbidden_tokens(forbidden: tuple[str, ...], *, ignore_case: bool = False) -> list[str]:
-    root = Path(__file__).resolve().parents[1]
+    root = _scan_root()
     search_tokens = tuple(token.lower() for token in forbidden) if ignore_case else forbidden
     skipped_dirs = {
         ".git",
@@ -84,7 +90,7 @@ def _find_forbidden_tokens(forbidden: tuple[str, ...], *, ignore_case: bool = Fa
         relative_parts = path.relative_to(root).parts
         if any(part in skipped_dirs for part in relative_parts):
             continue
-        if path.name in skipped_files:
+        if _is_skipped_local_file(path, skipped_files):
             continue
         relative = "/".join(relative_parts)
         searchable_relative = relative.lower() if ignore_case else relative
@@ -107,7 +113,7 @@ def _find_forbidden_tokens(forbidden: tuple[str, ...], *, ignore_case: bool = Fa
 
 
 def _find_forbidden_pattern(pattern: re.Pattern[str]) -> list[str]:
-    root = Path(__file__).resolve().parents[1]
+    root = _scan_root()
     skipped_dirs = {
         ".git",
         ".mypy_cache",
@@ -126,7 +132,7 @@ def _find_forbidden_pattern(pattern: re.Pattern[str]) -> list[str]:
         relative_parts = path.relative_to(root).parts
         if any(part in skipped_dirs for part in relative_parts):
             continue
-        if path.name in skipped_files or not path.is_file():
+        if _is_skipped_local_file(path, skipped_files) or not path.is_file():
             continue
         relative = "/".join(relative_parts)
         try:
@@ -138,3 +144,11 @@ def _find_forbidden_pattern(pattern: re.Pattern[str]) -> list[str]:
             offenders.append(f"{relative}: {match.group(0)!r}")
 
     return offenders
+
+
+def _scan_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _is_skipped_local_file(path: Path, skipped_files: set[str]) -> bool:
+    return path.name in skipped_files or path.name.endswith(".local.xcconfig")

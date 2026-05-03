@@ -8,7 +8,7 @@ from line import lowlevel_worker
 from line.agent_backend import AgentJobResult, VoiceReply
 from line.agent_runs import AgentRunStatus, AgentRunStore
 from line.capture import CaptureConfig, CaptureMode, MarkerCaptureSession
-from line.claude_channel import ClaudeReply
+from line.cc_channel import CcReply
 from line.task_queue import TaskQueue
 from line.usage import UsageLog
 
@@ -64,8 +64,8 @@ def test_recognize_and_route_speech_speaks_route_reply(tmp_path) -> None:
     assert speaker.spoken_texts == ["Codex queue is empty."]
 
 
-def test_recognize_and_route_speech_sends_transcript_to_claude_channel(tmp_path) -> None:
-    client = FakeClaudeChannelClient()
+def test_recognize_and_route_speech_sends_transcript_to_cc_channel(tmp_path) -> None:
+    client = FakeCcChannelClient()
     queue = TaskQueue(tmp_path / "tasks.jsonl")
     events = EventLog(tmp_path / "events.jsonl")
 
@@ -76,7 +76,7 @@ def test_recognize_and_route_speech_sends_transcript_to_claude_channel(tmp_path)
             queue=queue,
             events=events,
             usage=UsageLog(tmp_path / "usage.jsonl"),
-            claude_channel_client=client,
+            cc_channel_client=client,
         )
     )
 
@@ -88,7 +88,7 @@ def test_recognize_and_route_speech_sends_transcript_to_claude_channel(tmp_path)
     assert [event.type for event in events.read_all()] == [
         "vad.speech",
         "stt.result",
-        "claude_channel.sent",
+        "cc_channel.sent",
     ]
 
 
@@ -527,13 +527,13 @@ def test_control_reset_clears_active_capture_session(tmp_path) -> None:
     assert reset_events[0].payload == {"reason": "external_reset", "source": "ios"}
 
 
-def test_consume_claude_replies_speaks_sse_replies(tmp_path) -> None:
+def test_consume_cc_replies_speaks_sse_replies(tmp_path) -> None:
     speaker = FakeSpeaker()
     events = EventLog(tmp_path / "events.jsonl")
 
     asyncio.run(
-        lowlevel_worker.consume_claude_replies(
-            reply_stream=FakeClaudeReplyStream([ClaudeReply(chat_id="voice", text="Done", status="done")]),
+        lowlevel_worker.consume_cc_replies(
+            reply_stream=FakeCcReplyStream([CcReply(chat_id="voice", text="Done", status="done")]),
             tts_publisher=speaker,
             events=events,
             max_replies=1,
@@ -541,7 +541,7 @@ def test_consume_claude_replies_speaks_sse_replies(tmp_path) -> None:
     )
 
     assert speaker.spoken_texts == ["Done"]
-    assert [event.type for event in events.read_all()] == ["claude_channel.reply"]
+    assert [event.type for event in events.read_all()] == ["cc_channel.reply"]
 
 
 def test_recognize_and_route_speech_records_empty_transcript_without_routing(tmp_path) -> None:
@@ -745,7 +745,7 @@ class FakeSpeechQueue:
         self.enqueued_tones.append(cue)
 
 
-class FakeClaudeChannelClient:
+class FakeCcChannelClient:
     def __init__(self) -> None:
         self.sent: list[tuple[str, str]] = []
 
@@ -754,8 +754,8 @@ class FakeClaudeChannelClient:
         return {"ok": True, "chat_id": chat_id}
 
 
-class FakeClaudeReplyStream:
-    def __init__(self, replies: list[ClaudeReply]) -> None:
+class FakeCcReplyStream:
+    def __init__(self, replies: list[CcReply]) -> None:
         self._replies = replies
 
     def iter_replies(self):

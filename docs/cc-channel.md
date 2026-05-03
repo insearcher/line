@@ -1,4 +1,4 @@
-# Claude Code Channel Bridge
+# CC Channel Bridge
 
 This bridge is an experimental path for talking to a running Claude Code session
 from the local voice demo. The public v0.1 happy path is Codex app-server; use
@@ -28,7 +28,7 @@ instead.
 ## Install
 
 ```bash
-cd channels/claude-voice-channel
+cd bridges/cc-channel
 bun install
 bun test
 ```
@@ -38,13 +38,13 @@ bun test
 From the repository root:
 
 ```bash
-printf 'VOICE_CHANNEL_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env.claude-channel.local
+printf 'VOICE_CHANNEL_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env.cc-channel.local
 set -a
-. ./.env.claude-channel.local
+. ./.env.cc-channel.local
 set +a
 
 claude \
-  --mcp-config '{"mcpServers":{"line":{"command":"bun","args":["./channels/claude-voice-channel/server.ts"]}}}' \
+  --mcp-config '{"mcpServers":{"line":{"command":"bun","args":["./bridges/cc-channel/server.ts"]}}}' \
   --dangerously-load-development-channels server:line
 ```
 
@@ -60,7 +60,8 @@ The channel server exposes:
 Manual text test:
 
 ```bash
-uv run line claude-channel-send \
+cd gateway
+uv run line cc-channel-send \
   "Say briefly that the channel works" \
   --token "$VOICE_CHANNEL_TOKEN"
 ```
@@ -72,32 +73,34 @@ the MCP tool `reply_to_voice` for any user-facing answer.
 
 Terminal 1, keep Claude running with the command above.
 
-Terminal 2:
+Terminal 2, from the repository root:
 
 ```bash
 set -a
-. ./.env.claude-channel.local
+. ./.env.cc-channel.local
 set +a
 
+cd gateway
 uv run line lowlevel-worker \
   --room line-dev \
   --identity line-worker \
-  --claude-channel-url http://127.0.0.1:8790 \
-  --claude-channel-token "$VOICE_CHANNEL_TOKEN"
+  --cc-channel-url http://127.0.0.1:8790 \
+  --cc-channel-token "$VOICE_CHANNEL_TOKEN"
 ```
 
-Terminal 3:
+Terminal 3, from the repository root:
 
 ```bash
+cd gateway
 uv run line demo-server --room line-dev --identity mac-test
 ```
 
-Open `http://127.0.0.1:8787`, connect, and speak. In Claude mode the worker:
+Open `http://127.0.0.1:8787`, connect, and speak. In CC mode the worker:
 
 1. Receives browser mic audio from LiveKit.
 2. Gates audio locally with Silero VAD.
 3. Sends speech chunks to Deepgram STT.
-4. Posts the final transcript to Claude channel `/voice`.
+4. Posts the final transcript to the CC channel `/voice`.
 5. Reads Claude's `reply_to_voice` tool calls from `/events`.
 6. Speaks those replies through the existing TTS publisher.
 
@@ -117,7 +120,8 @@ curl -X POST http://127.0.0.1:8790/permission \
 or:
 
 ```bash
-uv run line claude-channel-send "allow req_123" --token "$VOICE_CHANNEL_TOKEN"
+cd gateway
+uv run line cc-channel-send "allow req_123" --token "$VOICE_CHANNEL_TOKEN"
 ```
 
 Do not expose the bridge outside localhost without real authentication and an

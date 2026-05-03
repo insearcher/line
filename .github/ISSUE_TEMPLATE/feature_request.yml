@@ -23,7 +23,7 @@ body:
       label: Area
       options:
         - iOS app
-        - macOS server
+        - gateway
         - agent backend
         - speech provider
         - docs

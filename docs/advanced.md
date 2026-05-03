@@ -4,12 +4,15 @@ The public v0.1 happy path is Codex app-server. The repository also contains
 older MVP paths that are useful for development but should be treated as
 experimental.
 
+Run gateway commands from `gateway/`.
+
 ## Router mode
 
 Router mode keeps real agents out of the voice loop and writes fake tasks to a
 local JSONL queue.
 
 ```bash
+cd gateway
 uv run line dry-run "Ask Codex to check the LiveKit worker"
 uv run line dry-run "status"
 uv run line dry-run "cancel"
@@ -73,8 +76,8 @@ uv run line lowlevel-worker \
 
 Set `--agent-permission-mode` explicitly if you want unattended edits.
 
-## Claude channel bridge
+## CC channel bridge
 
 The Claude Code Channels bridge is documented separately in
-[docs/claude-channel.md](claude-channel.md). It requires channel support in the
-Claude organization and is not part of the main release path.
+[docs/cc-channel.md](cc-channel.md). It requires channel support in the Claude
+organization and is not part of the main release path.

@@ -7,12 +7,12 @@ import urllib.error
 import urllib.request
 
 
-class ClaudeChannelError(RuntimeError):
+class CcChannelError(RuntimeError):
     pass
 
 
 @dataclass(frozen=True)
-class ClaudeChannelClient:
+class CcChannelClient:
     base_url: str = "http://127.0.0.1:8790"
     token: str | None = None
     sender: str = "local-voice"
@@ -36,21 +36,21 @@ class ClaudeChannelClient:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 body = response.read().decode("utf-8")
         except urllib.error.URLError as error:
-            raise ClaudeChannelError(f"Claude channel request failed: {error}") from error
+            raise CcChannelError(f"CC channel request failed: {error}") from error
 
         try:
             data = json.loads(body)
         except json.JSONDecodeError as error:
-            raise ClaudeChannelError("Claude channel returned non-JSON response") from error
+            raise CcChannelError("CC channel returned non-JSON response") from error
         if not isinstance(data, dict):
-            raise ClaudeChannelError("Claude channel returned unexpected response")
+            raise CcChannelError("CC channel returned unexpected response")
         if data.get("ok") is False:
-            raise ClaudeChannelError(str(data.get("error") or "Claude channel rejected request"))
+            raise CcChannelError(str(data.get("error") or "CC channel rejected request"))
         return data
 
 
 @dataclass(frozen=True)
-class ClaudeReply:
+class CcReply:
     chat_id: str
     text: str
     status: str = "reply"
@@ -58,7 +58,7 @@ class ClaudeReply:
 
 
 @dataclass(frozen=True)
-class ClaudeReplyStream:
+class CcReplyStream:
     base_url: str = "http://127.0.0.1:8790"
     token: str | None = None
     sender: str = "local-voice"
@@ -81,8 +81,8 @@ class ClaudeReplyStream:
                 continue
 
 
-def parse_sse_payload(payload: str) -> list[ClaudeReply]:
-    replies: list[ClaudeReply] = []
+def parse_sse_payload(payload: str) -> list[CcReply]:
+    replies: list[CcReply] = []
     for block in payload.split("\n\n"):
         reply = _parse_sse_block(block.splitlines())
         if reply is not None:
@@ -90,7 +90,7 @@ def parse_sse_payload(payload: str) -> list[ClaudeReply]:
     return replies
 
 
-def _iter_reply_lines(response) -> ClaudeReply:
+def _iter_reply_lines(response) -> CcReply:
     event_lines: list[str] = []
     for raw_line in response:
         line = raw_line.decode("utf-8").rstrip("\r\n")
@@ -103,7 +103,7 @@ def _iter_reply_lines(response) -> ClaudeReply:
             yield reply
 
 
-def _parse_sse_block(lines: list[str]) -> ClaudeReply | None:
+def _parse_sse_block(lines: list[str]) -> CcReply | None:
     event_name = "message"
     data_lines: list[str] = []
     for line in lines:
@@ -122,7 +122,7 @@ def _parse_sse_block(lines: list[str]) -> ClaudeReply | None:
     text = str(payload.get("text") or "").strip()
     if not text:
         return None
-    return ClaudeReply(
+    return CcReply(
         chat_id=str(payload.get("chat_id") or "voice"),
         text=text,
         status=str(payload.get("status") or "reply"),

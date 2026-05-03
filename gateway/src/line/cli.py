@@ -18,7 +18,7 @@ from line.agent_backend import (
     CodexAppServerConfig,
 )
 from line.capture import CaptureConfig, CaptureMode
-from line.claude_channel import ClaudeChannelClient, ClaudeChannelError
+from line.cc_channel import CcChannelClient, CcChannelError
 from line.demo_server import DemoServerConfig, run_demo_server
 from line.livekit_worker import run_worker
 from line.lowlevel_worker import LowLevelWorkerConfig, run_lowlevel_worker
@@ -178,26 +178,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to JSONL agent run state.",
     )
     lowlevel_worker.add_argument(
-        "--claude-channel-url",
+        "--cc-channel-url",
         default=None,
         help="Optional local Claude Code Channels bridge URL, for example http://127.0.0.1:8790.",
     )
     lowlevel_worker.add_argument(
-        "--claude-channel-token",
+        "--cc-channel-token",
         default=None,
-        help="Optional bearer token for the Claude channel bridge.",
+        help="Optional bearer token for the CC channel bridge.",
     )
     add_agent_arguments(lowlevel_worker)
     add_capture_arguments(lowlevel_worker)
 
-    claude_send = subparsers.add_parser(
-        "claude-channel-send",
+    cc_send = subparsers.add_parser(
+        "cc-channel-send",
         help="Send a text message into the local Claude Code Channels bridge.",
     )
-    claude_send.add_argument("text", help="Text to send as a voice channel event.")
-    claude_send.add_argument("--url", default="http://127.0.0.1:8790", help="Claude channel bridge URL.")
-    claude_send.add_argument("--token", default=None, help="Optional bearer token for the bridge.")
-    claude_send.add_argument("--chat-id", default="voice", help="Voice chat id to attach to the event.")
+    cc_send.add_argument("text", help="Text to send as a voice channel event.")
+    cc_send.add_argument("--url", default="http://127.0.0.1:8790", help="CC channel bridge URL.")
+    cc_send.add_argument("--token", default=None, help="Optional bearer token for the bridge.")
+    cc_send.add_argument("--chat-id", default="voice", help="Voice chat id to attach to the event.")
 
     agent_run = subparsers.add_parser(
         "agent-run",
@@ -385,8 +385,8 @@ def main() -> None:
                 usage_path=args.usage,
                 control_path=args.control,
                 agent_runs_path=args.agent_runs,
-                claude_channel_url=args.claude_channel_url,
-                claude_channel_token=args.claude_channel_token,
+                cc_channel_url=args.cc_channel_url,
+                cc_channel_token=args.cc_channel_token,
                 agent_backend=args.agent_backend,
                 agent_model=args.agent_model,
                 agent_cwd=args.agent_cwd,
@@ -405,13 +405,13 @@ def main() -> None:
                 ),
             )
         )
-    elif args.command == "claude-channel-send":
+    elif args.command == "cc-channel-send":
         try:
-            response = ClaudeChannelClient(base_url=args.url, token=args.token).send_voice_message(
+            response = CcChannelClient(base_url=args.url, token=args.token).send_voice_message(
                 args.text,
                 chat_id=args.chat_id,
             )
-        except ClaudeChannelError as error:
+        except CcChannelError as error:
             print(str(error), file=sys.stderr)
             raise SystemExit(2) from None
         print(json.dumps(response, ensure_ascii=False, indent=2, sort_keys=True))

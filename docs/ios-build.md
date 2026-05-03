@@ -1,7 +1,7 @@
 # iOS Build
 
 The iOS app is source-built for the v0.1 release. It connects to the local demo
-server, joins the LiveKit room, applies local energy VAD, and plays remote agent
+gateway, joins the LiveKit room, applies local energy VAD, and plays remote agent
 audio.
 
 ## Requirements
@@ -14,7 +14,7 @@ audio.
 ## Generate the project
 
 ```bash
-cd ios/Line
+cd clients/ios
 xcodegen generate
 open Line.xcodeproj
 ```
@@ -25,7 +25,7 @@ The checked-in scheme is `Line`; the public app display name is `line`.
 
 The checked-in project intentionally does not include a personal Apple
 development team. Put local signing values in the ignored file
-`ios/Line/Line.local.xcconfig`:
+`clients/ios/Line.local.xcconfig`:
 
 ```xcconfig
 LINE_DEVELOPMENT_TEAM =
@@ -37,7 +37,7 @@ Fill those values with your Apple team and bundle identifiers, then regenerate
 the project:
 
 ```bash
-cd ios/Line
+cd clients/ios
 xcodegen generate
 open Line.xcodeproj
 ```
@@ -46,15 +46,17 @@ Do not commit `Line.local.xcconfig`.
 
 ## Pairing
 
-Start the server on your Mac:
+From the repository root, start the gateway on your Mac:
 
 ```bash
+cd gateway
 uv run line demo-server --host 0.0.0.0 --room line-dev --identity mac-test
 ```
 
-Create a pairing code:
+From the repository root, create a pairing code:
 
 ```bash
+cd gateway
 uv run line pair --server-url http://YOUR-MAC-LAN-IP:8787
 ```
 
@@ -71,7 +73,7 @@ need a reachable LAN or private VPN address.
 
 ```bash
 xcodebuild test \
-  -project ios/Line/Line.xcodeproj \
+  -project clients/ios/Line.xcodeproj \
   -scheme Line \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0.1'
 ```

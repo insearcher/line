@@ -19,7 +19,7 @@ from line.agent_backend import (
 )
 from line.agent_runs import AgentRunRecord, AgentRunStore
 from line.capture import CaptureAction, CaptureActionKind, CaptureConfig, CaptureMode, MarkerCaptureSession
-from line.claude_channel import ClaudeChannelClient, ClaudeReply, ClaudeReplyStream
+from line.cc_channel import CcChannelClient, CcReply, CcReplyStream
 from line.events import EventLog
 from line.routing_service import RouteResult, route_transcript
 from line.settings import VoiceConfig, load_env_file
@@ -43,8 +43,8 @@ class LowLevelWorkerConfig:
     queue_path: Path = Path("data/line_tasks.jsonl")
     usage_path: Path = Path("data/usage.jsonl")
     control_path: Path = Path("data/control.jsonl")
-    claude_channel_url: str | None = None
-    claude_channel_token: str | None = None
+    cc_channel_url: str | None = None
+    cc_channel_token: str | None = None
     agent_backend: str = "router"
     agent_model: str = "haiku"
     agent_cwd: Path | None = None
@@ -160,14 +160,14 @@ async def run_lowlevel_worker_async(config: LowLevelWorkerConfig) -> None:
         usage=usage,
     )
     speech_queue = SpeechQueue(tts_publisher)
-    claude_channel_client = (
-        ClaudeChannelClient(base_url=config.claude_channel_url, token=config.claude_channel_token)
-        if config.claude_channel_url
+    cc_channel_client = (
+        CcChannelClient(base_url=config.cc_channel_url, token=config.cc_channel_token)
+        if config.cc_channel_url
         else None
     )
-    claude_reply_stream = (
-        ClaudeReplyStream(base_url=config.claude_channel_url, token=config.claude_channel_token)
-        if config.claude_channel_url
+    cc_reply_stream = (
+        CcReplyStream(base_url=config.cc_channel_url, token=config.cc_channel_token)
+        if config.cc_channel_url
         else None
     )
     agent_backend = build_agent_backend(config)
@@ -203,7 +203,7 @@ async def run_lowlevel_worker_async(config: LowLevelWorkerConfig) -> None:
                 events=events,
                 usage=usage,
                 tts_publisher=speech_queue,
-                claude_channel_client=claude_channel_client,
+                cc_channel_client=cc_channel_client,
                 agent_backend=agent_backend,
                 agent_runs=agent_runs,
                 capture_session=capture_session,
@@ -244,10 +244,10 @@ async def run_lowlevel_worker_async(config: LowLevelWorkerConfig) -> None:
     events.append("livekit.worker_connected", {"room": config.room, "identity": config.identity})
     await tts_publisher.start()
     await speech_queue.start()
-    if claude_reply_stream is not None:
+    if cc_reply_stream is not None:
         task = asyncio.create_task(
-            consume_claude_replies(
-                reply_stream=claude_reply_stream,
+            consume_cc_replies(
+                reply_stream=cc_reply_stream,
                 tts_publisher=speech_queue,
                 events=events,
             )
@@ -302,7 +302,7 @@ async def handle_audio_track(
     events: EventLog,
     usage: UsageLog,
     tts_publisher: Any | None = None,
-    claude_channel_client: ClaudeChannelClient | None = None,
+    cc_channel_client: CcChannelClient | None = None,
     agent_backend: Any | None = None,
     agent_runs: AgentRunStore | None = None,
     capture_session: MarkerCaptureSession | None = None,
@@ -374,7 +374,7 @@ async def handle_audio_track(
                 events=events,
                 usage=usage,
                 tts_publisher=tts_publisher,
-                claude_channel_client=claude_channel_client,
+                cc_channel_client=cc_channel_client,
                 agent_backend=agent_backend,
                 agent_runs=agent_runs,
                 agent_tasks=agent_tasks,
@@ -433,7 +433,7 @@ async def handle_audio_track(
                 events=events,
                 usage=usage,
                 tts_publisher=tts_publisher,
-                claude_channel_client=claude_channel_client,
+                cc_channel_client=cc_channel_client,
                 agent_backend=agent_backend,
                 agent_runs=agent_runs,
                 capture_session=capture_session,
@@ -460,7 +460,7 @@ async def recognize_and_route_speech(
     events: EventLog,
     usage: UsageLog,
     tts_publisher: Any | None = None,
-    claude_channel_client: ClaudeChannelClient | None = None,
+    cc_channel_client: CcChannelClient | None = None,
     agent_backend: Any | None = None,
     agent_runs: AgentRunStore | None = None,
     capture_session: MarkerCaptureSession | None = None,
@@ -519,7 +519,7 @@ async def recognize_and_route_speech(
         queue=queue,
         events=events,
         tts_publisher=tts_publisher,
-        claude_channel_client=claude_channel_client,
+        cc_channel_client=cc_channel_client,
         agent_backend=agent_backend,
         agent_runs=agent_runs,
         agent_tasks=agent_tasks,
@@ -534,24 +534,24 @@ async def dispatch_recognized_text(
     queue: TaskQueue,
     events: EventLog,
     tts_publisher: Any | None = None,
-    claude_channel_client: ClaudeChannelClient | None = None,
+    cc_channel_client: CcChannelClient | None = None,
     agent_backend: Any | None = None,
     agent_runs: AgentRunStore | None = None,
     agent_tasks: set[asyncio.Task] | None = None,
     suppress_agent_ack: bool = False,
 ) -> SpeechRouteResult:
-    if claude_channel_client is not None:
+    if cc_channel_client is not None:
         try:
-            await asyncio.to_thread(claude_channel_client.send_voice_message, transcript, "voice")
+            await asyncio.to_thread(cc_channel_client.send_voice_message, transcript, "voice")
         except Exception as error:  # noqa: BLE001 - boundary around local HTTP bridge
             events.append(
-                "claude_channel.error",
+                "cc_channel.error",
                 {"error": format_error(error), "text": transcript},
                 created_at=created_at,
             )
         else:
             events.append(
-                "claude_channel.sent",
+                "cc_channel.sent",
                 {"text": transcript, "chat_id": "voice"},
                 created_at=created_at,
             )
@@ -637,7 +637,7 @@ async def probe_capture_markers(
     tts_publisher: Any | None,
     capture_session: MarkerCaptureSession | None,
     now: float,
-    claude_channel_client: ClaudeChannelClient | None = None,
+    cc_channel_client: CcChannelClient | None = None,
     agent_backend: Any | None = None,
     agent_runs: AgentRunStore | None = None,
     agent_tasks: set[asyncio.Task] | None = None,
@@ -692,7 +692,7 @@ async def probe_capture_markers(
             queue=queue,
             events=events,
             tts_publisher=tts_publisher,
-            claude_channel_client=claude_channel_client,
+            cc_channel_client=cc_channel_client,
             agent_backend=agent_backend,
             agent_runs=agent_runs,
             agent_tasks=agent_tasks,
@@ -897,9 +897,9 @@ async def run_agent_backend_job(
         await deliver_speech(tts_publisher, spoken_reply)
 
 
-async def consume_claude_replies(
+async def consume_cc_replies(
     *,
-    reply_stream: ClaudeReplyStream,
+    reply_stream: CcReplyStream,
     tts_publisher: Any,
     events: EventLog,
     max_replies: int | None = None,
@@ -911,7 +911,7 @@ async def consume_claude_replies(
         if reply is None:
             return
         events.append(
-            "claude_channel.reply",
+            "cc_channel.reply",
             {
                 "chat_id": reply.chat_id,
                 "status": reply.status,
@@ -925,7 +925,7 @@ async def consume_claude_replies(
             return
 
 
-def _next_reply_or_none(iterator: Any) -> ClaudeReply | None:
+def _next_reply_or_none(iterator: Any) -> CcReply | None:
     try:
         return next(iterator)
     except StopIteration:

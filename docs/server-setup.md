@@ -1,11 +1,15 @@
-# Server Setup
+# Gateway Setup
 
-This guide covers the public v0.1 happy path: macOS server, iOS app, LiveKit
+This guide covers the public v0.1 happy path: local gateway, iOS app, LiveKit
 Cloud, Deepgram STT, ElevenLabs TTS, and Codex app-server as the agent backend.
+
+Run the commands in this guide from `gateway/` unless another directory is
+shown.
 
 ## 1. Install dependencies
 
 ```bash
+cd gateway
 uv sync --all-extras --dev
 ```
 
@@ -39,10 +43,10 @@ Run the doctor check:
 uv run line doctor --agent-backend codex-app-server --agent-cwd /path/to/workspace
 ```
 
-## 3. Start the local server
+## 3. Start the local gateway
 
-The demo server provides LiveKit tokens, pairing, reset controls, event logs, and
-the browser dashboard.
+The demo server provides LiveKit tokens, pairing, reset controls, event logs,
+and the browser dashboard.
 
 For a physical iPhone, bind to all interfaces on a trusted LAN or private VPN:
 
@@ -104,14 +108,14 @@ uv run line agent-run \
 
 ## Runtime files
 
-line writes local runtime state under ignored paths:
+line writes local runtime state under ignored paths inside `gateway/`:
 
-- `data/events.jsonl`
-- `data/usage.jsonl`
-- `data/agent_runs.jsonl`
-- `data/control.jsonl`
-- `data/pairing_state.json`
-- `logs/`
+- `gateway/data/events.jsonl`
+- `gateway/data/usage.jsonl`
+- `gateway/data/agent_runs.jsonl`
+- `gateway/data/control.jsonl`
+- `gateway/data/pairing_state.json`
+- `gateway/logs/`
 
 These files may contain transcripts, local URLs, and operational details. Do not
 commit them.

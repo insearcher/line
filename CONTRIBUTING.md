@@ -1,20 +1,21 @@
 # Contributing
 
 line is an early developer tool. The first release target is narrow: build the
-macOS server and iOS app from source, pair a phone, speak a marker-gated command,
-and receive a spoken response from a local Codex app-server session.
+gateway and iOS app from source, pair a phone, speak a marker-gated command, and
+receive a spoken response from a local Codex app-server session.
 
 ## Development setup
 
 ```bash
+cd gateway
 uv sync --all-extras --dev
 uv run pytest -q
 ```
 
-For the optional Claude channel bridge:
+For the optional CC channel bridge:
 
 ```bash
-cd channels/claude-voice-channel
+cd bridges/cc-channel
 bun install
 bun test
 ```
@@ -22,7 +23,7 @@ bun test
 For the iOS app, install Xcode and XcodeGen, then generate and test the project:
 
 ```bash
-cd ios/Line
+cd clients/ios
 xcodegen generate
 xcodebuild test -project Line.xcodeproj -scheme Line -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0.1'
 ```

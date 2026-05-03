@@ -110,7 +110,7 @@ function createMcpServer(listeners: Set<SseListener>): Server {
         tools: {},
       },
       instructions: [
-        "Voice messages from the operator arrive as Claude channel events.",
+        "Voice messages from the operator arrive as CC channel events.",
         "They are short commands spoken through a local voice UI.",
         "Always call reply_to_voice with the same chat_id for user-facing responses.",
         "Keep replies short because they will be spoken through TTS.",
@@ -217,7 +217,7 @@ async function handleHttpRequest(
   const url = new URL(request.url);
 
   if (request.method === "GET" && url.pathname === "/health") {
-    return jsonResponse({ ok: true, service: "claude-voice-channel" });
+    return jsonResponse({ ok: true, service: "cc-channel" });
   }
 
   if (request.method === "GET" && url.pathname === "/events") {
@@ -324,7 +324,7 @@ export async function main(): Promise<void> {
     port,
     fetch: (request) => handleHttpRequest(request, server, listeners, auth),
   });
-  console.error(`claude-voice-channel listening on http://${host}:${port}`);
+  console.error(`cc-channel listening on http://${host}:${port}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
