@@ -80,6 +80,8 @@ def test_pairing_instructions_include_gateway_invitation_deep_link(tmp_path) -> 
     instructions = format_pairing_instructions(session)
 
     assert "Deep link: line://pair?" in instructions
+    assert "QR code:" in instructions
+    assert "\u2588\u2588" in instructions
     deep_link_line = next(line for line in instructions.splitlines() if line.startswith("Deep link: "))
     parsed = urlparse(deep_link_line.removeprefix("Deep link: "))
     query = parse_qs(parsed.query)
