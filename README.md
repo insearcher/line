@@ -1,5 +1,10 @@
 # line
 
+> **Archived:** line is no longer under active development. After testing
+> [Happy](https://github.com/slopus/happy), the intended product direction for
+> line is considered covered by Happy's mobile/web agent control and voice
+> workflow. See [ARCHIVED.md](ARCHIVED.md) for context.
+
 line is a hands-free voice control layer for AI coding agents.
 
 The first public release target is intentionally small: build the local gateway
@@ -70,6 +75,7 @@ room.
 
 ## Documentation
 
+- [Archive notice](ARCHIVED.md)
 - [Gateway setup](gateway/README.md)
 - [iOS client](clients/ios/README.md)
 - [Security model](SECURITY.md)
